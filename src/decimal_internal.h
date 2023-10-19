@@ -1,10 +1,10 @@
 #ifndef DECIMAL_INTERNAL_H_
 #define DECIMAL_INTERMAL_H_
 
-#include <stdint.h>
+#include "basic_decimal.h"
 #include <limits.h>
 #include <math.h>
-#include "basic_decimal.h"
+#include <stdint.h>
 
 // std::numeric_limits<int64_t>::digits10);
 #define kInt64DecimalDigits 18
@@ -34,7 +34,7 @@ const uint64_t kUInt64PowersOfTen[kInt64DecimalDigits + 1] = {
 };
 
 // On the Windows R toolchain, INFINITY is double type instead of float
-//constexpr float kFloatInf = std::numeric_limits<float>::infinity();
+// constexpr float kFloatInf = std::numeric_limits<float>::infinity();
 #define kFloatInf HUGE_VALF
 
 // Attention: these pre-computed constants might not exactly represent their
@@ -69,19 +69,20 @@ const float kFloatPowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
     kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf};
 
 const double kDoublePowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
-    1e-76, 1e-75, 1e-74, 1e-73, 1e-72, 1e-71, 1e-70, 1e-69, 1e-68, 1e-67, 1e-66, 1e-65,
-    1e-64, 1e-63, 1e-62, 1e-61, 1e-60, 1e-59, 1e-58, 1e-57, 1e-56, 1e-55, 1e-54, 1e-53,
-    1e-52, 1e-51, 1e-50, 1e-49, 1e-48, 1e-47, 1e-46, 1e-45, 1e-44, 1e-43, 1e-42, 1e-41,
-    1e-40, 1e-39, 1e-38, 1e-37, 1e-36, 1e-35, 1e-34, 1e-33, 1e-32, 1e-31, 1e-30, 1e-29,
-    1e-28, 1e-27, 1e-26, 1e-25, 1e-24, 1e-23, 1e-22, 1e-21, 1e-20, 1e-19, 1e-18, 1e-17,
-    1e-16, 1e-15, 1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-9,  1e-8,  1e-7,  1e-6,  1e-5,
-    1e-4,  1e-3,  1e-2,  1e-1,  1e0,   1e1,   1e2,   1e3,   1e4,   1e5,   1e6,   1e7,
-    1e8,   1e9,   1e10,  1e11,  1e12,  1e13,  1e14,  1e15,  1e16,  1e17,  1e18,  1e19,
-    1e20,  1e21,  1e22,  1e23,  1e24,  1e25,  1e26,  1e27,  1e28,  1e29,  1e30,  1e31,
-    1e32,  1e33,  1e34,  1e35,  1e36,  1e37,  1e38,  1e39,  1e40,  1e41,  1e42,  1e43,
-    1e44,  1e45,  1e46,  1e47,  1e48,  1e49,  1e50,  1e51,  1e52,  1e53,  1e54,  1e55,
-    1e56,  1e57,  1e58,  1e59,  1e60,  1e61,  1e62,  1e63,  1e64,  1e65,  1e66,  1e67,
-    1e68,  1e69,  1e70,  1e71,  1e72,  1e73,  1e74,  1e75,  1e76};
+    1e-76, 1e-75, 1e-74, 1e-73, 1e-72, 1e-71, 1e-70, 1e-69, 1e-68, 1e-67, 1e-66,
+    1e-65, 1e-64, 1e-63, 1e-62, 1e-61, 1e-60, 1e-59, 1e-58, 1e-57, 1e-56, 1e-55,
+    1e-54, 1e-53, 1e-52, 1e-51, 1e-50, 1e-49, 1e-48, 1e-47, 1e-46, 1e-45, 1e-44,
+    1e-43, 1e-42, 1e-41, 1e-40, 1e-39, 1e-38, 1e-37, 1e-36, 1e-35, 1e-34, 1e-33,
+    1e-32, 1e-31, 1e-30, 1e-29, 1e-28, 1e-27, 1e-26, 1e-25, 1e-24, 1e-23, 1e-22,
+    1e-21, 1e-20, 1e-19, 1e-18, 1e-17, 1e-16, 1e-15, 1e-14, 1e-13, 1e-12, 1e-11,
+    1e-10, 1e-9,  1e-8,  1e-7,  1e-6,  1e-5,  1e-4,  1e-3,  1e-2,  1e-1,  1e0,
+    1e1,   1e2,   1e3,   1e4,   1e5,   1e6,   1e7,   1e8,   1e9,   1e10,  1e11,
+    1e12,  1e13,  1e14,  1e15,  1e16,  1e17,  1e18,  1e19,  1e20,  1e21,  1e22,
+    1e23,  1e24,  1e25,  1e26,  1e27,  1e28,  1e29,  1e30,  1e31,  1e32,  1e33,
+    1e34,  1e35,  1e36,  1e37,  1e38,  1e39,  1e40,  1e41,  1e42,  1e43,  1e44,
+    1e45,  1e46,  1e47,  1e48,  1e49,  1e50,  1e51,  1e52,  1e53,  1e54,  1e55,
+    1e56,  1e57,  1e58,  1e59,  1e60,  1e61,  1e62,  1e63,  1e64,  1e65,  1e66,
+    1e67,  1e68,  1e69,  1e70,  1e71,  1e72,  1e73,  1e74,  1e75,  1e76};
 
 #ifdef LITTLE_ENDIAN
 const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
@@ -250,18 +251,15 @@ const decimal128_t kDecimal128HalfPowersOfTen[] = {
     {{271050543121376108LL, 9257742014424809472ULL}},
     {{2710505431213761085LL, 343699775700336640ULL}}};
 
-
-
 #endif
 
 // ceil(log2(10 ^ k)) for k in [0...76]
 const int kCeilLog2PowersOfTen[76 + 1] = {
-    0,   4,   7,   10,  14,  17,  20,  24,  27,  30,  34,  37,  40,  44,  47,  50,
-    54,  57,  60,  64,  67,  70,  74,  77,  80,  84,  87,  90,  94,  97,  100, 103,
-    107, 110, 113, 117, 120, 123, 127, 130, 133, 137, 140, 143, 147, 150, 153, 157,
-    160, 163, 167, 170, 173, 177, 180, 183, 187, 190, 193, 196, 200, 203, 206, 210,
-    213, 216, 220, 223, 226, 230, 233, 236, 240, 243, 246, 250, 253};
-
+    0,   4,   7,   10,  14,  17,  20,  24,  27,  30,  34,  37,  40,
+    44,  47,  50,  54,  57,  60,  64,  67,  70,  74,  77,  80,  84,
+    87,  90,  94,  97,  100, 103, 107, 110, 113, 117, 120, 123, 127,
+    130, 133, 137, 140, 143, 147, 150, 153, 157, 160, 163, 167, 170,
+    173, 177, 180, 183, 187, 190, 193, 196, 200, 203, 206, 210, 213,
+    216, 220, 223, 226, 230, 233, 236, 240, 243, 246, 250, 253};
 
 #endif
-

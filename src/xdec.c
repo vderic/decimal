@@ -3,7 +3,11 @@
 #include <string.h>
 
 void print_dec128(decimal128_t dec) {
+#ifdef LITTLE_ENDIAN
   printf("%ld, %ld\n", dec.array[0], dec.array[1]);
+#else
+  printf("%ld, %ld\n", dec.array[1], dec.array[0]);
+#endif
 }
 
 int main() {
