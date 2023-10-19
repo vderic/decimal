@@ -20,7 +20,7 @@ CFILES = basic_decimal.c
 OBJS = $(CFILES:.c=.o)
 EXECS = xdec
 
-all: $(EXECS) 
+all: libdec128.a $(EXECS) 
 
 xdec: xdec.c
 	$(CC) $(CFLAGS) -o $@ $(filter-out %.hpp %.h, $^) $(LDFLAGS) $(LDLIBS)
@@ -34,7 +34,7 @@ clean:
 	rm -f *.a *.o *.d $(EXECS)
 
 format:
-	clang-format -i *.c *.h *.cpp *.hpp
+	clang-format -i *.c *.h
 
 .PHONY: all clean format
 
