@@ -13,10 +13,10 @@ void print_dec128(decimal128_t dec) {
 int main() {
 
   int64_t v = -123;
-  decimal128_t dec = decimal128_from_int64(v);
+  decimal128_t dec = dec128_from_int64(v);
   print_dec128(dec);
 
-  decimal128_t dec2 = decimal128_from_hilow(100, 330);
+  decimal128_t dec2 = dec128_from_hilow(100, 330);
   print_dec128(dec2);
 
   decimal128_t dec3 = {{100, 300}};

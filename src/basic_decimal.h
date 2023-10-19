@@ -22,17 +22,17 @@ typedef struct decimal128_t {
   uint64_t array[NWORDS];
 } decimal128_t;
 
-decimal128_t decimal128_from_lowbits(int64_t low_bits);
-decimal128_t decimal128_from_pointer(const uint8_t *bytes);
-decimal128_t decimal128_from_hilow(int64_t high, uint64_t low);
-decimal128_t decimal128_from_int64(int64_t value);
+decimal128_t dec128_from_lowbits(int64_t low_bits);
+decimal128_t dec128_from_pointer(const uint8_t *bytes);
+decimal128_t dec128_from_hilow(int64_t high, uint64_t low);
+decimal128_t dec128_from_int64(int64_t value);
 void dec128_to_bytes(decimal128_t *v, uint8_t *out);
 int64_t dec128_sign(decimal128_t v);
 bool dec128_is_negative(decimal128_t v);
 int64_t dec128_high_bits(decimal128_t v);
 uint64_t dec128_low_bits(decimal128_t v);
 
-decimal128_t decimal128_from_lowbits(int64_t low_bits) {
+decimal128_t dec128_from_lowbits(int64_t low_bits) {
   decimal128_t dec = {};
   if (low_bits < 0) {
     for (int i = 0; i < NWORDS; i++) {
@@ -45,25 +45,25 @@ decimal128_t decimal128_from_lowbits(int64_t low_bits) {
 }
 
 /* Bytes are assumed to be in native-endian byte order */
-decimal128_t decimal128_from_pointer(const uint8_t *bytes) {
+decimal128_t dec128_from_pointer(const uint8_t *bytes) {
   decimal128_t dec;
   memcpy(&dec, bytes, sizeof(decimal128_t));
   return dec;
 }
 
-decimal128_t decimal128_from_int64(int64_t value) {
-  return decimal128_from_lowbits(value);
+decimal128_t dec128_from_int64(int64_t value) {
+  return dec128_from_lowbits(value);
 }
 
 #if LITTLE_ENDIAN
-decimal128_t decimal128_from_hilow(int64_t high, uint64_t low) {
+decimal128_t dec128_from_hilow(int64_t high, uint64_t low) {
   decimal128_t dec;
   dec.array[0] = low;
   dec.array[1] = (uint64_t)high;
   return dec;
 }
 #else
-decimal128_t decimal128_from_hilow(int64_t high, uint64_t low) {
+decimal128_t dec128_from_hilow(int64_t high, uint64_t low) {
   decimal128_t dec;
   dec.array[0] = (uint64_t)high;
   dec.array[1] = low;
