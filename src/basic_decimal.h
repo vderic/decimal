@@ -39,6 +39,13 @@ bool dec128_is_negative(decimal128_t v);
 int64_t dec128_high_bits(decimal128_t v);
 uint64_t dec128_low_bits(decimal128_t v);
 
+int dec128_compare(decimal128_t left, decimal128_t right);
+bool dec128_cmpeq(decimal128_t left, decimal128_t right);
+bool dec128_cmplt(decimal128_t left, decimal128_t right);
+bool dec128_cmpgt(decimal128_t left, decimal128_t right);
+bool dec128_cmpge(decimal128_t left, decimal128_t right);
+bool dec128_cmple(decimal128_t left, decimal128_t right);
+
 decimal128_t dec128_from_lowbits(int64_t low_bits) {
   decimal128_t dec = {};
   if (low_bits < 0) {
@@ -63,7 +70,7 @@ decimal128_t dec128_from_int64(int64_t value) {
 }
 
 #if LITTLE_ENDIAN
-decimal128_t dec128_from_hilow(int64_t high, uint64_t low) {
+decimal128_t dec128_from_hilo(int64_t high, uint64_t low) {
   decimal128_t dec;
   dec.array[0] = low;
   dec.array[1] = (uint64_t)high;

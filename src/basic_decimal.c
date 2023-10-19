@@ -15,7 +15,7 @@ int dec128_compare(decimal128_t v1, decimal128_t v2) { return 0; }
 
 bool dec128_cmpeq(decimal128_t left, decimal128_t right) {
   return dec128_high_bits(left) == dec128_high_bits(right) &&
-         dec128_low_bits(left) == dec128_high_bits(right);
+         dec128_low_bits(left) == dec128_low_bits(right);
 }
 
 bool dec128_cmplt(decimal128_t left, decimal128_t right) {
@@ -185,6 +185,159 @@ bool dec128_fits_in_precision(decimal128_t v, int32_t precision) {
 
 int32_t dec128_count_leading_binary_zeros(decimal128_t v) { return 0; }
 
+/// Expands the given value into a big endian array of ints so that we can work
+/// on it. The array will be converted to an absolute value and the was_negative
+/// flag will be set appropriately. The array will remove leading zeros from
+/// the value.
+/// \param array a big endian array of length 4 to set with the value
+/// \param was_negative a flag for whether the value was original negative
+/// \result the output length of the array
+static int64_t FillInArray(decimal128_t value, uint32_t *array,
+                           bool *was_negative) {
+  decimal128_t abs_value = dec128_abs(value);
+  *was_negative = dec128_high_bits(value) < 0;
+  uint64_t high = (uint64_t)dec128_high_bits(abs_value);
+  uint64_t low = dec128_low_bits(abs_value);
+
+  // FillInArray(std::array<uint64_t, N>& value_array, uint32_t* result_array)
+  // is not called here as the following code has better performance, to avoid
+  // regression on BasicDecimal128 Division.
+  if (high != 0) {
+    if (high > UINT_MAX) {
+      array[0] = (uint32_t)(high >> 32);
+      array[1] = (uint32_t)(high);
+      array[2] = (uint32_t)(low >> 32);
+      array[3] = (uint32_t)(low);
+      return 4;
+    }
+
+    array[0] = (uint32_t)(high);
+    array[1] = (uint32_t)(low >> 32);
+    array[2] = (uint32_t)(low);
+    return 3;
+  }
+
+  if (low > UINT_MAX) {
+    array[0] = (uint32_t)(low >> 32);
+    array[1] = (uint32_t)(low);
+    return 2;
+  }
+
+  if (low == 0) {
+    return 0;
+  }
+
+  array[0] = (uint32_t)(low);
+  return 1;
+}
+
+/// Shift the number in the array left by bits positions.
+/// \param array the number to shift, must have length elements
+/// \param length the number of entries in the array
+/// \param bits the number of bits to shift (0 <= bits < 32)
+static void ShiftArrayLeft(uint32_t *array, int64_t length, int64_t bits) {
+  if (length > 0 && bits != 0) {
+    for (int64_t i = 0; i < length - 1; ++i) {
+      array[i] = (array[i] << bits) | (array[i + 1] >> (32 - bits));
+    }
+    array[length - 1] <<= bits;
+  }
+}
+
+/// Shift the number in the array right by bits positions.
+/// \param array the number to shift, must have length elements
+/// \param length the number of entries in the array
+/// \param bits the number of bits to shift (0 <= bits < 32)
+static inline void ShiftArrayRight(uint32_t *array, int64_t length,
+                                   int64_t bits) {
+  if (length > 0 && bits != 0) {
+    for (int64_t i = length - 1; i > 0; --i) {
+      array[i] = (array[i] >> bits) | (array[i - 1] << (32 - bits));
+    }
+    array[0] >>= bits;
+  }
+}
+
+/// \brief Fix the signs of the result and remainder at the end of the division
+/// based on the signs of the dividend and divisor.
+static inline void FixDivisionSigns(decimal128_t *result,
+                                    decimal128_t *remainder,
+                                    bool dividend_was_negative,
+                                    bool divisor_was_negative) {
+  if (dividend_was_negative != divisor_was_negative) {
+    *result = dec128_negate(*result);
+  }
+
+  if (dividend_was_negative) {
+    *remainder = dec128_negate(*remainder);
+  }
+}
+
+// \brief Build a native endian array of uint64_t from a big endian array of
+// uint32_t.
+static decimal_status_t BuildFromArrayToInt64(uint64_t *result_array, int N,
+                                              const uint32_t *array,
+                                              int64_t length) {
+  for (int64_t i = length - 2 * N - 1; i >= 0; i--) {
+    if (array[i] != 0) {
+      return DEC128_OVERFLOW;
+    }
+  }
+  int64_t next_index = length - 1;
+  size_t i = 0;
+  for (; i < N && next_index >= 0; i++) {
+    uint64_t lower_bits = array[next_index--];
+    result_array[i] =
+        (next_index < 0)
+            ? lower_bits
+            : (((uint64_t)(array[next_index--]) << 32) + lower_bits);
+  }
+  for (; i < N; i++) {
+    result_array[i] = 0;
+  }
+  return DEC128_SUCCESS;
+}
+
+/// \brief Build a BasicDecimal128 from a big endian array of uint32_t.
+static decimal_status_t BuildFromArray(decimal128_t *value,
+                                       const uint32_t *array, int64_t length) {
+  uint64_t result_array[NWORDS];
+  decimal_status_t status =
+      BuildFromArrayToInt64((uint64_t *)&result_array, NWORDS, array, length);
+  if (status != DEC128_SUCCESS) {
+    return status;
+  }
+  *value = dec128_from_hilo((int64_t)(result_array[1]), result_array[0]);
+  return DEC128_SUCCESS;
+}
+
+/// \brief Do a division where the divisor fits into a single 32 bit value.
+static inline decimal_status_t
+SingleDivide(const uint32_t *dividend, int64_t dividend_length,
+             uint32_t divisor, decimal128_t *remainder,
+             bool dividend_was_negative, bool divisor_was_negative,
+             decimal128_t *result) {
+  uint64_t r = 0;
+  const int64_t kDecimalArrayLength = DEC128_BIT_WIDTH / sizeof(uint32_t) + 1;
+  uint32_t result_array[kDecimalArrayLength];
+  for (int64_t j = 0; j < dividend_length; j++) {
+    r <<= 32;
+    r += dividend[j];
+    result_array[j] = (uint32_t)(r / divisor);
+    r %= divisor;
+  }
+  decimal_status_t status =
+      BuildFromArray(result, result_array, dividend_length);
+  if (status != DEC128_SUCCESS) {
+    return status;
+  }
+
+  *remainder = dec128_from_int64((int64_t)(r));
+  FixDivisionSigns(result, remainder, dividend_was_negative,
+                   divisor_was_negative);
+  return DEC128_SUCCESS;
+}
+
 static inline decimal_status_t DecimalDivide(decimal128_t dividend,
                                              decimal128_t divisor,
                                              decimal128_t *result,
@@ -199,9 +352,9 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
   // leave an extra zero before the dividend
   dividend_array[0] = 0;
   int64_t dividend_length =
-      FillInArray(dividend, dividend_array + 1, dividend_was_negative) + 1;
+      FillInArray(dividend, dividend_array + 1, &dividend_was_negative) + 1;
   int64_t divisor_length =
-      FillInArray(divisor, divisor_array, divisor_was_negative);
+      FillInArray(divisor, divisor_array, &divisor_was_negative);
 
   // Handle some of the easy cases.
   if (dividend_length <= divisor_length) {
@@ -235,7 +388,7 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
   for (int64_t j = 0; j < result_length; ++j) {
     // Guess the next digit. At worst it is two too large
     uint32_t guess = UINT_MAX;
-    const auto high_dividend =
+    const uint64_t high_dividend =
         ((uint64_t)dividend_array[j]) << 32 | dividend_array[j + 1];
     if (dividend_array[j] != divisor_array[0]) {
       guess = (uint32_t)(high_dividend / divisor_array[0]);
@@ -243,7 +396,7 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
 
     // catch all of the cases where guess is two too large and most of the
     // cases where it is one too large
-    auto rhat =
+    uint32_t rhat =
         (uint32_t)(high_dividend - guess * ((uint64_t)divisor_array[0]));
     while (((uint64_t)divisor_array[1]) * guess >
            (((uint64_t)rhat) << 32) + dividend_array[j + 2]) {
@@ -273,7 +426,7 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
       --guess;
       uint32_t carry = 0;
       for (int64_t i = divisor_length - 1; i >= 0; --i) {
-        const auto sum =
+        const uint64_t sum =
             ((uint64_t)divisor_array[i]) + dividend_array[j + i + 1] + carry;
         dividend_array[j + i + 1] = ((uint32_t)sum);
         carry = (uint32_t)(sum >> 32);
@@ -288,7 +441,7 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
   ShiftArrayRight(dividend_array, dividend_length, normalize_bits);
 
   // return result and remainder
-  auto status = BuildFromArray(result, result_array, result_length);
+  decimal_status_t status = BuildFromArray(result, result_array, result_length);
   if (status != DEC128_SUCCESS) {
     return status;
   }

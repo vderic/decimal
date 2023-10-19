@@ -23,7 +23,7 @@ static inline int CountLeadingZeros(uint32_t value) {
     return 32;
   return ((int)__builtin_clz(value));
 #elif defined(_MSC_VER)
-  unsigned long index;                                              // NOLINT
+  unsigned long index;                                   // NOLINT
   if (_BitScanReverse(&index, (unsigned long)(value))) { // NOLINT
     return 31 - ((int)index);
   } else {
