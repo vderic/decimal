@@ -24,7 +24,7 @@ typedef struct decimal128_t {
 
 decimal128_t dec128_from_lowbits(int64_t low_bits);
 decimal128_t dec128_from_pointer(const uint8_t *bytes);
-decimal128_t dec128_from_hilow(int64_t high, uint64_t low);
+decimal128_t dec128_from_hilo(int64_t high, uint64_t low);
 decimal128_t dec128_from_int64(int64_t value);
 void dec128_to_bytes(decimal128_t *v, uint8_t *out);
 int64_t dec128_sign(decimal128_t v);
@@ -73,7 +73,8 @@ decimal128_t dec128_from_hilow(int64_t high, uint64_t low) {
 
 decimal128_t *dec128_negate(decimal128_t *v);
 
-decimal128_t *dec128_abs(decimal128_t *v);
+decimal128_t *dec128_abs_inplace(decimal128_t *v);
+decimal128_t dec128_abs(decimal128_t v);
 
 void dec128_to_bytes(decimal128_t *v, uint8_t *out) {
   memcpy(out, v->array, NWORDS);
@@ -96,9 +97,9 @@ decimal128_t dec128_multiply(decimal128_t left, decimal128_t right);
 
 decimal128_t dec128_divide(decimal128_t left, decimal128_t right);
 
-decimal128_t *dec128_bitwise_and(decimal128_t *v, uint32_t bits);
+decimal128_t dec128_bitwise_and(decimal128_t left, decimal128_t right);
 
-decimal128_t *dec128_bitwise_or(decimal128_t *v, uint32_t bits);
+decimal128_t dec128_bitwise_or(decimal128_t left, decimal128_t right);
 
 decimal128_t dec128_bitwise_shift_left(decimal128_t v, uint32_t bits);
 
