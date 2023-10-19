@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DECIML128_BIT_WIDTH 128
+#define DEC128_BIT_WIDTH 128
 #define BIT_WIDTH 128
 #define NWORDS (128 / 64)
 
@@ -17,6 +17,13 @@
 #define HIGHWORDINDEX 0
 #define LOWWORDINDEX (NWORDS - 1)
 #endif
+
+typedef enum decimal_status_t {
+  DEC128_SUCCESS,
+  DEC128_DIVIDBYZERO,
+  DEC128_OVERFLOW,
+  DEC128_RESCALEDATALOSS,
+} decimal_status_t;
 
 typedef struct decimal128_t {
   uint64_t array[NWORDS];

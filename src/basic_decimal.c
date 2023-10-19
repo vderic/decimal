@@ -1,6 +1,8 @@
 #include "basic_decimal.h"
+#include "bit_util.h"
 #include "decimal_internal.h"
 #include "int_util_overflow.h"
+#include <limits.h>
 #include <math.h>
 
 static const uint64_t kInt64Mask = 0xFFFFFFFFFFFFFFFF;
@@ -182,3 +184,120 @@ bool dec128_fits_in_precision(decimal128_t v, int32_t precision) {
 }
 
 int32_t dec128_count_leading_binary_zeros(decimal128_t v) { return 0; }
+
+static inline decimal_status_t DecimalDivide(decimal128_t dividend,
+                                             decimal128_t divisor,
+                                             decimal128_t *result,
+                                             decimal128_t *remainder) {
+  const int64_t kDecimalArrayLength = DEC128_BIT_WIDTH / sizeof(uint32_t);
+  // Split the dividend and divisor into integer pieces so that we can
+  // work on them.
+  uint32_t dividend_array[kDecimalArrayLength + 1];
+  uint32_t divisor_array[kDecimalArrayLength];
+  bool dividend_was_negative;
+  bool divisor_was_negative;
+  // leave an extra zero before the dividend
+  dividend_array[0] = 0;
+  int64_t dividend_length =
+      FillInArray(dividend, dividend_array + 1, dividend_was_negative) + 1;
+  int64_t divisor_length =
+      FillInArray(divisor, divisor_array, divisor_was_negative);
+
+  // Handle some of the easy cases.
+  if (dividend_length <= divisor_length) {
+    *remainder = dividend;
+    *result = (decimal128_t){0};
+    return DEC128_SUCCESS;
+  }
+
+  if (divisor_length == 0) {
+    return DEC128_DIVIDBYZERO;
+  }
+
+  if (divisor_length == 1) {
+    return SingleDivide(dividend_array, dividend_length, divisor_array[0],
+                        remainder, dividend_was_negative, divisor_was_negative,
+                        result);
+  }
+
+  int64_t result_length = dividend_length - divisor_length;
+  uint32_t result_array[kDecimalArrayLength];
+  DCHECK_LE(result_length, kDecimalArrayLength);
+
+  // Normalize by shifting both by a multiple of 2 so that
+  // the digit guessing is better. The requirement is that
+  // divisor_array[0] is greater than 2**31.
+  int64_t normalize_bits = CountLeadingZeros(divisor_array[0]);
+  ShiftArrayLeft(divisor_array, divisor_length, normalize_bits);
+  ShiftArrayLeft(dividend_array, dividend_length, normalize_bits);
+
+  // compute each digit in the result
+  for (int64_t j = 0; j < result_length; ++j) {
+    // Guess the next digit. At worst it is two too large
+    uint32_t guess = UINT_MAX;
+    const auto high_dividend =
+        ((uint64_t)dividend_array[j]) << 32 | dividend_array[j + 1];
+    if (dividend_array[j] != divisor_array[0]) {
+      guess = (uint32_t)(high_dividend / divisor_array[0]);
+    }
+
+    // catch all of the cases where guess is two too large and most of the
+    // cases where it is one too large
+    auto rhat =
+        (uint32_t)(high_dividend - guess * ((uint64_t)divisor_array[0]));
+    while (((uint64_t)divisor_array[1]) * guess >
+           (((uint64_t)rhat) << 32) + dividend_array[j + 2]) {
+      --guess;
+      rhat += divisor_array[0];
+      if (((uint64_t)rhat) < divisor_array[0]) {
+        break;
+      }
+    }
+
+    // subtract off the guess * divisor from the dividend
+    uint64_t mult = 0;
+    for (int64_t i = divisor_length - 1; i >= 0; --i) {
+      mult += ((uint64_t)guess) * divisor_array[i];
+      uint32_t prev = dividend_array[j + i + 1];
+      dividend_array[j + i + 1] -= ((uint32_t)mult);
+      mult >>= 32;
+      if (dividend_array[j + i + 1] > prev) {
+        ++mult;
+      }
+    }
+    uint32_t prev = dividend_array[j];
+    dividend_array[j] -= ((uint32_t)mult);
+
+    // if guess was too big, we add back divisor
+    if (dividend_array[j] > prev) {
+      --guess;
+      uint32_t carry = 0;
+      for (int64_t i = divisor_length - 1; i >= 0; --i) {
+        const auto sum =
+            ((uint64_t)divisor_array[i]) + dividend_array[j + i + 1] + carry;
+        dividend_array[j + i + 1] = ((uint32_t)sum);
+        carry = (uint32_t)(sum >> 32);
+      }
+      dividend_array[j] += carry;
+    }
+
+    result_array[j] = guess;
+  }
+
+  // denormalize the remainder
+  ShiftArrayRight(dividend_array, dividend_length, normalize_bits);
+
+  // return result and remainder
+  auto status = BuildFromArray(result, result_array, result_length);
+  if (status != DEC128_SUCCESS) {
+    return status;
+  }
+  status = BuildFromArray(remainder, dividend_array, dividend_length);
+  if (status != DEC128_SUCCESS) {
+    return status;
+  }
+
+  FixDivisionSigns(result, remainder, dividend_was_negative,
+                   divisor_was_negative);
+  return DEC128_SUCCESS;
+}
