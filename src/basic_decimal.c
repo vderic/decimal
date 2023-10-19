@@ -3,31 +3,51 @@
 #include "int_util_overflow.h"
 #include <math.h>
 
-int dec128_compare(decimal128_t v1, decimal128_t v2) { return 0; }
-bool dec128_cmpeq(decimal128_t v1, decimal128_t v2) { return false; }
-bool dec128_cmplt(decimal128_t v1, decimal128_t v2) { return false; }
-bool dec128_cmpgt(decimal128_t v1, decimal128_t v2) { return false; }
-bool dec128_cmpge(decimal128_t v1, decimal128_t v2) {
-  return !dec128_cmplt(v1, v2);
-}
-bool dec128_cmple(decimal128_t v1, decimal128_t v2) {
-  return !dec128_cmpgt(v1, v2);
+static const uint64_t kInt64Mask = 0xFFFFFFFFFFFFFFFF;
+
+static __uint128_t dec128_to_uint128(decimal128_t v) {
+  return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
 }
 
-decimal128_t *dec128_negate(decimal128_t *v) {
-  uint64_t result_lo = ~dec128_low_bits(*v) + 1;
-  int64_t result_hi = ~dec128_high_bits(*v);
+int dec128_compare(decimal128_t v1, decimal128_t v2) { return 0; }
+
+bool dec128_cmpeq(decimal128_t left, decimal128_t right) {
+  return dec128_high_bits(left) == dec128_high_bits(right) &&
+         dec128_low_bits(left) == dec128_high_bits(right);
+}
+
+bool dec128_cmplt(decimal128_t left, decimal128_t right) {
+  return dec128_high_bits(left) < dec128_high_bits(right) ||
+         (dec128_high_bits(left) == dec128_high_bits(right) &&
+          dec128_low_bits(left) < dec128_low_bits(right));
+}
+
+bool dec128_cmpgt(decimal128_t left, decimal128_t right) {
+  return dec128_cmplt(right, left);
+}
+
+bool dec128_cmpge(decimal128_t left, decimal128_t right) {
+  return !dec128_cmplt(left, right);
+}
+
+bool dec128_cmple(decimal128_t left, decimal128_t right) {
+  return !dec128_cmpgt(left, right);
+}
+
+decimal128_t dec128_negate(decimal128_t v) {
+  uint64_t result_lo = ~dec128_low_bits(v) + 1;
+  int64_t result_hi = ~dec128_high_bits(v);
   if (result_lo == 0) {
     result_hi = SafeSignedAdd(result_hi, 1);
   }
-  *v = dec128_from_hilo(result_hi, result_lo);
-  return v;
+  decimal128_t res = dec128_from_hilo(result_hi, result_lo);
+  return res;
 }
 
 decimal128_t *dec128_abs_inplace(decimal128_t *v) {
   decimal128_t zero = {};
   if (dec128_cmplt(*v, zero)) {
-    dec128_negate(v);
+    *v = dec128_negate(*v);
   }
   return v;
 }
@@ -55,8 +75,16 @@ decimal128_t dec128_substract(decimal128_t left, decimal128_t right) {
 }
 
 decimal128_t dec128_multiply(decimal128_t left, decimal128_t right) {
-  decimal128_t dec = {0};
-  return dec;
+  const bool negate = dec128_sign(left) != dec128_sign(right);
+  decimal128_t x = dec128_abs(left);
+  decimal128_t y = dec128_abs(right);
+  __uint128_t r = dec128_to_uint128(x);
+  r *= dec128_to_uint128(y);
+  decimal128_t res = dec128_from_pointer((uint8_t *)&r);
+  if (negate) {
+    res = dec128_negate(res);
+  }
+  return res;
 }
 
 decimal128_t dec128_divide(decimal128_t left, decimal128_t right) {

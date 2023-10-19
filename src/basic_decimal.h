@@ -71,7 +71,7 @@ decimal128_t dec128_from_hilow(int64_t high, uint64_t low) {
 }
 #endif
 
-decimal128_t *dec128_negate(decimal128_t *v);
+decimal128_t dec128_negate(decimal128_t v);
 
 decimal128_t *dec128_abs_inplace(decimal128_t *v);
 decimal128_t dec128_abs(decimal128_t v);
