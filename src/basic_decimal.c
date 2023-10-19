@@ -1,4 +1,5 @@
 #include "basic_decimal.h"
+#include "decimal_internal.h"
 #include <math.h>
 
 decimal128_t *dec128_negate(decimal128_t *v) { return 0; }

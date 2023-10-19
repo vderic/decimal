@@ -14,5 +14,8 @@ int main() {
 
   decimal128_t dec2 = decimal128_from_hilow(100, 330);
   print_dec128(dec2);
+
+  decimal128_t dec3 = {{100, 300}};
+  print_dec128(dec3);
   return 0;
 }
