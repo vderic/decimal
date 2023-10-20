@@ -287,13 +287,15 @@ static decimal_status_t BuildFromArrayToInt64(uint64_t *result_array, int N,
   size_t i = 0;
   for (; i < N && next_index >= 0; i++) {
     uint64_t lower_bits = array[next_index--];
-    result_array[i] =
+    int idx = LITTLE_ENDIAN ? i : N - 1 - i;
+    result_array[idx] =
         (next_index < 0)
             ? lower_bits
             : (((uint64_t)(array[next_index--]) << 32) + lower_bits);
   }
   for (; i < N; i++) {
-    result_array[i] = 0;
+    int idx = LITTLE_ENDIAN ? i : N - 1 - i;
+    result_array[idx] = 0;
   }
   return DEC128_SUCCESS;
 }
@@ -302,12 +304,14 @@ static decimal_status_t BuildFromArrayToInt64(uint64_t *result_array, int N,
 static decimal_status_t BuildFromArray(decimal128_t *value,
                                        const uint32_t *array, int64_t length) {
   uint64_t result_array[NWORDS];
+  int idx0 = LITTLE_ENDIAN ? 0 : NWORDS - 1;
+  int idx1 = LITTLE_ENDIAN ? 1 : NWORDS - 2;
   decimal_status_t status =
       BuildFromArrayToInt64((uint64_t *)&result_array, NWORDS, array, length);
   if (status != DEC128_SUCCESS) {
     return status;
   }
-  *value = dec128_from_hilo((int64_t)(result_array[1]), result_array[0]);
+  *value = dec128_from_hilo((int64_t)(result_array[idx1]), result_array[idx0]);
   return DEC128_SUCCESS;
 }
 
