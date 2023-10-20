@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void print_dec128(decimal128_t dec) {
+static void print_dec128(decimal128_t dec) {
 #if LITTLE_ENDIAN
   printf("%ld, %ld\n", dec.array[0], dec.array[1]);
 #else

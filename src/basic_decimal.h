@@ -19,10 +19,10 @@
 #endif
 
 typedef enum decimal_status_t {
-  DEC128_SUCCESS,
-  DEC128_DIVIDBYZERO,
-  DEC128_OVERFLOW,
-  DEC128_RESCALEDATALOSS,
+  DEC128_STATUS_SUCCESS,
+  DEC128_STATUS_DIVIDEDBYZERO,
+  DEC128_STATUS_OVERFLOW,
+  DEC128_STATUS_RESCALEDATALOSS,
 } decimal_status_t;
 
 typedef struct decimal128_t {
@@ -41,6 +41,7 @@ uint64_t dec128_low_bits(decimal128_t v);
 
 int dec128_compare(decimal128_t left, decimal128_t right);
 bool dec128_cmpeq(decimal128_t left, decimal128_t right);
+bool dec128_cmpne(decimal128_t left, decimal128_t right);
 bool dec128_cmplt(decimal128_t left, decimal128_t right);
 bool dec128_cmpgt(decimal128_t left, decimal128_t right);
 bool dec128_cmpge(decimal128_t left, decimal128_t right);
@@ -109,7 +110,8 @@ decimal128_t dec128_substract(decimal128_t left, decimal128_t right);
 
 decimal128_t dec128_multiply(decimal128_t left, decimal128_t right);
 
-decimal128_t dec128_divide(decimal128_t left, decimal128_t right);
+decimal_status_t dec128_divide(decimal128_t dividend, decimal128_t divisor,
+                               decimal128_t *result, decimal128_t *remainder);
 
 decimal128_t dec128_bitwise_and(decimal128_t left, decimal128_t right);
 
@@ -135,15 +137,20 @@ uint64_t dec128_low_bits(decimal128_t v) {
 #endif
 }
 
-void dec128_get_whole_and_fraction(decimal128_t v, int32_t scale,
-                                   decimal128_t *whole, decimal128_t *fraction);
+decimal_status_t dec128_get_whole_and_fraction(decimal128_t v, int32_t scale,
+                                               decimal128_t *whole,
+                                               decimal128_t *fraction);
 
-decimal128_t *dec128_get_scale_multipler(int32_t scale);
+decimal128_t dec128_get_scale_multipler(int32_t scale);
 
-decimal128_t *dec128_get_half_scale_multipler(int32_t scale);
+decimal128_t dec128_get_half_scale_multipler(int32_t scale);
 
-int dec128_rescale(decimal128_t v, int32_t original_scale, int32_t new_scale,
-                   decimal128_t *out, char errbuf, int errsz);
+decimal128_t dec128_max_value();
+
+decimal128_t dec128_max(int32_t precision);
+
+decimal_status_t dec128_rescale(decimal128_t v, int32_t original_scale,
+                                int32_t new_scale, decimal128_t *out);
 
 decimal128_t dec128_increase_scale_by(decimal128_t v, int32_t increase_by);
 
