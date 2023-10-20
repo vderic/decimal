@@ -23,7 +23,7 @@ EXECS = xdec
 
 all: libdec128.a $(EXECS) 
 
-xdec: xdec.c
+xdec: xdec.c libdec128.a
 	$(CC) $(CFLAGS) -o $@ $(filter-out %.hpp %.h, $^) $(LDFLAGS) $(LDLIBS)
 
 libdec128.a: $(OBJS)

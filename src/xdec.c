@@ -12,9 +12,28 @@ static void print_dec128(decimal128_t dec) {
 
 int main() {
 
-  int64_t v = -123;
+  decimal_status_t s;
+
+  int64_t v = -12345678;
   decimal128_t dec = dec128_from_int64(v);
   print_dec128(dec);
+
+  decimal128_t rescale;
+  s = dec128_rescale(dec, 3, 5, &rescale);
+  if (s != DEC128_STATUS_SUCCESS) {
+    fprintf(stderr, "rescale failed\n");
+    return 1;
+  }
+
+  print_dec128(rescale);
+
+  decimal128_t divisor = dec128_from_int64(2);
+  decimal128_t result, remainder;
+
+  dec128_divide(dec, divisor, &result, &remainder);
+
+  print_dec128(result);
+  print_dec128(remainder);
 
   decimal128_t dec2 = dec128_from_hilo(100, 330);
   print_dec128(dec2);
