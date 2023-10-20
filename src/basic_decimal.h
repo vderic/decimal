@@ -3,9 +3,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 #ifdef __cplusplus
 #define DEC128_EXTERN_BEGIN extern "C" {
@@ -16,7 +16,6 @@
 #endif
 
 DEC128_EXTERN_BEGIN
-
 
 #define DEC128_BIT_WIDTH 128
 #define BIT_WIDTH 128
@@ -48,6 +47,14 @@ bool dec128_cmplt(decimal128_t left, decimal128_t right);
 bool dec128_cmpgt(decimal128_t left, decimal128_t right);
 bool dec128_cmpge(decimal128_t left, decimal128_t right);
 bool dec128_cmple(decimal128_t left, decimal128_t right);
+
+static inline void dec128_print(decimal128_t dec) {
+#if LITTLE_ENDIAN
+  printf("LO:%ld, HI:%ld\n", dec.array[0], dec.array[1]);
+#else
+  printf("LO:%ld, HI:%ld\n", dec.array[1], dec.array[0]);
+#endif
+}
 
 static inline decimal128_t dec128_from_lowbits(int64_t low_bits) {
   decimal128_t dec = {};
@@ -99,7 +106,7 @@ static inline void dec128_to_bytes(decimal128_t *v, uint8_t *out) {
 
 // return 1 if positive or zero, -1 if strictly negative
 static inline int64_t dec128_sign(decimal128_t v) {
-  return 1 | (int64_t)(v.array[HIGHWORDINDEX] >> 63);
+  return 1 | ((int64_t)(v.array[HIGHWORDINDEX]) >> 63);
 }
 
 static inline bool dec128_is_negative(decimal128_t v) {
