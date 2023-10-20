@@ -7,6 +7,9 @@
 
 static const uint64_t kInt64Mask = 0xFFFFFFFFFFFFFFFF;
 
+#define UINT128_HIGH_BITS(v) (v >> 64)
+#define UINT128_LOW_BITS(v) (v & kInt64Mask)
+
 static __uint128_t dec128_to_uint128(decimal128_t v) {
   return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
 }
@@ -82,7 +85,7 @@ decimal128_t dec128_multiply(decimal128_t left, decimal128_t right) {
   decimal128_t y = dec128_abs(right);
   __uint128_t r = dec128_to_uint128(x);
   r *= dec128_to_uint128(y);
-  decimal128_t res = dec128_from_pointer((uint8_t *)&r);
+  decimal128_t res = dec128_from_hilo((int64_t) UINT128_HIGH_BITS(r), UINT128_LOW_BITS(r));
   if (negate) {
     res = dec128_negate(res);
   }

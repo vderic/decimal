@@ -77,7 +77,7 @@ decimal128_t dec128_from_hilo(int64_t high, uint64_t low) {
   return dec;
 }
 #else
-decimal128_t dec128_from_hilow(int64_t high, uint64_t low) {
+decimal128_t dec128_from_hilo(int64_t high, uint64_t low) {
   decimal128_t dec;
   dec.array[0] = (uint64_t)high;
   dec.array[1] = low;
