@@ -48,7 +48,7 @@ bool dec128_cmpgt(decimal128_t left, decimal128_t right);
 bool dec128_cmpge(decimal128_t left, decimal128_t right);
 bool dec128_cmple(decimal128_t left, decimal128_t right);
 
-void dec128_print(decimal128_t v);
+void dec128_print(FILE *fp, decimal128_t v, int precision, int scale);
 
 static inline decimal128_t dec128_from_lowbits(int64_t low_bits) {
   decimal128_t dec = {};
@@ -94,8 +94,8 @@ decimal128_t dec128_negate(decimal128_t v);
 decimal128_t *dec128_abs_inplace(decimal128_t *v);
 decimal128_t dec128_abs(decimal128_t v);
 
-static inline void dec128_to_bytes(decimal128_t *v, uint8_t *out) {
-  memcpy(out, v->array, NWORDS);
+static inline void dec128_to_bytes(decimal128_t v, uint8_t *out) {
+  memcpy(out, v.array, sizeof(v.array));
 }
 
 // return 1 if positive or zero, -1 if strictly negative

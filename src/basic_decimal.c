@@ -2,6 +2,7 @@
 #include "bit_util.h"
 #include "decimal_internal.h"
 #include "int_util_overflow.h"
+#include <assert.h>
 #include <limits.h>
 #include <math.h>
 
@@ -35,18 +36,48 @@ static __uint128_t dec128_to_uint128(decimal128_t v) {
   return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
 }
 
-void dec128_print(decimal128_t v) {
-  bool negate = (dec128_high_bits(v) < 0);
-  if (negate) {
-    v = dec128_negate(v);
-    printf("(-) ");
+void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
+  // DECIMAL: Formula: unscaledValue * 10^(-scale)
+  // int32: max precision is 9.
+  // int64: max precision is 18.
+  // int128: max precision is 38.
+  // int256: max precision is 76. (not supported).
+
+  __int128_t value;
+  dec128_to_bytes(v, &value);
+
+  assert(precision >= 1 && precision <= 38);
+  assert(scale >= 0 && scale < precision);
+  const int sign = (value < 0);
+  __uint128_t tmp = (sign ? -value : value);
+
+  char buffer[128];
+  char *p = &buffer[sizeof(buffer) - 1];
+  *p = 0;
+
+  for (; scale > 0; scale--, precision--) {
+    *--p = '0' + (tmp % 10);
+    tmp /= 10;
   }
 
-#if DEC128_LITTLE_ENDIAN
-  printf("HI:%lu LO:%lu\n", v.array[1], v.array[0]);
-#else
-  printf("HI:%lu LO:%lu\n", v.array[0], v.array[1]);
-#endif
+  if (*p) {
+    *--p = '.';
+  }
+
+  for (; precision > 0 && tmp; precision--) {
+    *--p = '0' + (tmp % 10);
+    tmp /= 10;
+  }
+
+  if (*p == '.' || *p == 0) {
+    *--p = '0';
+  }
+
+  if (sign) {
+    *--p = '-';
+  }
+  fprintf(fp, "%s", p);
+  fprintf(fp, "\n");
 }
 
 int dec128_compare(decimal128_t v1, decimal128_t v2) { return 0; }
@@ -465,6 +496,7 @@ SingleDivide(const uint32_t *dividend, int64_t dividend_length,
     result_array[j] = (uint32_t)(r / divisor);
     r %= divisor;
   }
+
   decimal_status_t status =
       BuildFromArray(result, result_array, dividend_length);
   if (status != DEC128_STATUS_SUCCESS) {
@@ -474,6 +506,7 @@ SingleDivide(const uint32_t *dividend, int64_t dividend_length,
   *remainder = dec128_from_int64((int64_t)(r));
   FixDivisionSigns(result, remainder, dividend_was_negative,
                    divisor_was_negative);
+
   return DEC128_STATUS_SUCCESS;
 }
 
