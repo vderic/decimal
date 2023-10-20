@@ -81,5 +81,15 @@ int main() {
   decimal128_t d128 = dec128_from_pointer((uint8_t *)&i128);
   dec128_print(d128);
 
+  printf("leading binary zersos\n");
+  decimal128_t positive = dec128_from_int64(1234567890);
+  int64_t nzeros = dec128_count_leading_binary_zeros(positive);
+  printf("nzeros = %ld\n", nzeros);
+
+  printf("fit in precision\n");
+  bool fit0 = dec128_fits_in_precision(positive, 4);
+  bool fit1 = dec128_fits_in_precision(positive, 11);
+  printf("fit0 %d, fit1 %d\n", fit0, fit1);
+
   return 0;
 }
