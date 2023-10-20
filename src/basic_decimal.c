@@ -39,21 +39,13 @@ void dec128_print(decimal128_t v) {
   bool negate = (dec128_high_bits(v) < 0);
   if (negate) {
     v = dec128_negate(v);
-	printf("-");
+    printf("(-) ");
   }
-  
+
 #if DEC128_LITTLE_ENDIAN
-  if (v.array[1] == 0) {
-	printf("%lu\n", v.array[0]);
-  } else {
-	printf("%ld%ld\n", v.array[1], v.array[0]);
-  }
+  printf("HI:%lu LO:%lu\n", v.array[1], v.array[0]);
 #else
-  if (v.array[0] == 0) {
-	printf("%lu\n", v.array[1]);
-  } else {
-	printf("%ld%ld\n", v.array[0], v.array[1]);
-  }
+  printf("HI:%lu LO:%lu\n", v.array[0], v.array[1]);
 #endif
 }
 

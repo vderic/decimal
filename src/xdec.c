@@ -74,5 +74,12 @@ int main() {
   decimal128_t multiply = dec128_multiply(v3, dec128_from_int64(2));
   dec128_print(multiply);
 
+  printf("int128\n");
+  __int128_t i128 = -123456778;
+  i128 <<= 64;
+  i128 -= 6789;
+  decimal128_t d128 = dec128_from_pointer((uint8_t *)&i128);
+  dec128_print(d128);
+
   return 0;
 }
