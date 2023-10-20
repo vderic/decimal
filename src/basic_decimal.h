@@ -48,13 +48,7 @@ bool dec128_cmpgt(decimal128_t left, decimal128_t right);
 bool dec128_cmpge(decimal128_t left, decimal128_t right);
 bool dec128_cmple(decimal128_t left, decimal128_t right);
 
-static inline void dec128_print(decimal128_t dec) {
-#if DEC128_LITTLE_ENDIAN
-  printf("LO:%ld, HI:%ld\n", dec.array[0], dec.array[1]);
-#else
-  printf("LO:%ld, HI:%ld\n", dec.array[1], dec.array[0]);
-#endif
-}
+void dec128_print(decimal128_t v);
 
 static inline decimal128_t dec128_from_lowbits(int64_t low_bits) {
   decimal128_t dec = {};
@@ -115,7 +109,7 @@ static inline bool dec128_is_negative(decimal128_t v) {
 
 decimal128_t dec128_sum(decimal128_t left, decimal128_t right);
 
-decimal128_t dec128_substract(decimal128_t left, decimal128_t right);
+decimal128_t dec128_subtract(decimal128_t left, decimal128_t right);
 
 decimal128_t dec128_multiply(decimal128_t left, decimal128_t right);
 

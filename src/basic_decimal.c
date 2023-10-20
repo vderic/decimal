@@ -35,6 +35,28 @@ static __uint128_t dec128_to_uint128(decimal128_t v) {
   return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
 }
 
+void dec128_print(decimal128_t v) {
+  bool negate = (dec128_high_bits(v) < 0);
+  if (negate) {
+    v = dec128_negate(v);
+	printf("-");
+  }
+  
+#if DEC128_LITTLE_ENDIAN
+  if (v.array[1] == 0) {
+	printf("%lu\n", v.array[0]);
+  } else {
+	printf("%ld%ld\n", v.array[1], v.array[0]);
+  }
+#else
+  if (v.array[0] == 0) {
+	printf("%lu\n", v.array[1]);
+  } else {
+	printf("%ld%ld\n", v.array[0], v.array[1]);
+  }
+#endif
+}
+
 int dec128_compare(decimal128_t v1, decimal128_t v2) { return 0; }
 
 bool dec128_cmpeq(decimal128_t left, decimal128_t right) {
@@ -70,6 +92,7 @@ decimal128_t dec128_negate(decimal128_t v) {
   if (result_lo == 0) {
     result_hi = SafeSignedAdd(result_hi, 1);
   }
+
   decimal128_t res = dec128_from_hilo(result_hi, result_lo);
   return res;
 }
@@ -96,7 +119,7 @@ decimal128_t dec128_sum(decimal128_t left, decimal128_t right) {
   return dec128_from_hilo(result_hi, result_lo);
 }
 
-decimal128_t dec128_substract(decimal128_t left, decimal128_t right) {
+decimal128_t dec128_subtract(decimal128_t left, decimal128_t right) {
   int64_t result_hi =
       SafeSignedSubtract(dec128_high_bits(left), dec128_high_bits(right));
   uint64_t result_lo = dec128_low_bits(left) - dec128_low_bits(right);
@@ -211,8 +234,8 @@ decimal128_t dec128_max(int32_t precision) {
   // DCHECK_GE(precision, 0);
   // DCHECK_LE(precision, 38);
 
-  return dec128_substract(kDecimal128PowersOfTen[precision],
-                          dec128_from_int64(1));
+  return dec128_subtract(kDecimal128PowersOfTen[precision],
+                         dec128_from_int64(1));
 }
 
 static bool rescale_would_cause_data_loss(decimal128_t value,
