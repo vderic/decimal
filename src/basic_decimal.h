@@ -21,7 +21,7 @@ DEC128_EXTERN_BEGIN
 #define BIT_WIDTH 128
 #define NWORDS (128 / 64)
 
-#if LITTLE_ENDIAN
+#if DEC128_LITTLE_ENDIAN
 #define HIGHWORDINDEX (NWORDS - 1)
 #define LOWWORDINDEX 0
 #else
@@ -49,7 +49,7 @@ bool dec128_cmpge(decimal128_t left, decimal128_t right);
 bool dec128_cmple(decimal128_t left, decimal128_t right);
 
 static inline void dec128_print(decimal128_t dec) {
-#if LITTLE_ENDIAN
+#if DEC128_LITTLE_ENDIAN
   printf("LO:%ld, HI:%ld\n", dec.array[0], dec.array[1]);
 #else
   printf("LO:%ld, HI:%ld\n", dec.array[1], dec.array[0]);
@@ -79,7 +79,7 @@ static inline decimal128_t dec128_from_int64(int64_t value) {
   return dec128_from_lowbits(value);
 }
 
-#if LITTLE_ENDIAN
+#if DEC128_LITTLE_ENDIAN
 static inline decimal128_t dec128_from_hilo(int64_t high, uint64_t low) {
   decimal128_t dec;
   dec.array[0] = low;
@@ -131,7 +131,7 @@ decimal128_t dec128_bitwise_shift_left(decimal128_t v, uint32_t bits);
 decimal128_t dec128_bitwise_shift_right(decimal128_t v, uint32_t bits);
 
 static inline int64_t dec128_high_bits(decimal128_t v) {
-#if LITTLE_ENDIAN
+#if DEC128_LITTLE_ENDIAN
   return (int64_t)v.array[1];
 #else
   return (int64_t)v.array[0];
@@ -139,7 +139,7 @@ static inline int64_t dec128_high_bits(decimal128_t v) {
 }
 
 static inline uint64_t dec128_low_bits(decimal128_t v) {
-#if LITTLE_ENDIAN
+#if DEC128_LITTLE_ENDIAN
   return v.array[0];
 #else
   return v.array[1];

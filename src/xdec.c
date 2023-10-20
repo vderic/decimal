@@ -22,7 +22,7 @@ int main() {
   dec128_print(rescale);
 
   printf("divide\n");
-  decimal128_t divisor = dec128_from_int64(2);
+  decimal128_t divisor = dec128_from_int64(5);
   decimal128_t result, remainder;
 
   dec128_divide(dec, divisor, &result, &remainder);

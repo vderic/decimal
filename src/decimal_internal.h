@@ -84,7 +84,7 @@ const double kDoublePowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
     1e56,  1e57,  1e58,  1e59,  1e60,  1e61,  1e62,  1e63,  1e64,  1e65,  1e66,
     1e67,  1e68,  1e69,  1e70,  1e71,  1e72,  1e73,  1e74,  1e75,  1e76};
 
-#if LITTLE_ENDIAN
+#if DEC128_LITTLE_ENDIAN
 const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
     {{1LL, 0ULL}},
     {{10LL, 0ULL}},
