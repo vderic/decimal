@@ -10,7 +10,7 @@ void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
   // int256: max precision is 76. (not supported).
 
   __int128_t value;
-  dec128_to_bytes(v, &value);
+  dec128_to_bytes(v, (uint8_t *)&value);
 
   assert(precision >= 1 && precision <= 38);
   assert(scale >= 0 && scale < precision);
@@ -64,5 +64,3 @@ float dec128_to_float(decimal128_t v, int32_t scale);
 double dec128_to_double(decimal128_t v, int32_t scale);
 
 void dec128_to_string(decimal128_t v, char *out, int32_t scale);
-
-
