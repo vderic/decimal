@@ -172,13 +172,15 @@ static void AdjustIntegerStringWithScale(char *str, int32_t scale,
   // decimal point: *str = "-0.0123"
   char *p = out;
   if (is_negative) {
-    out += sprintf(out, "-");
+    *p = '-';
+    p++;
   }
   for (int i = 0; i < scale - num_digits + 2; i++) {
-    out += sprintf(out, "0");
+    *p = '0';
+    p++;
   }
-  out += sprintf(out, "%s", str + is_negative_offset);
-  p[is_negative_offset + 1] = '.';
+  p += sprintf(p, "%s", str + is_negative_offset);
+  out[is_negative_offset + 1] = '.';
 }
 
 /* input */
