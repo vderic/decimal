@@ -40,7 +40,7 @@ typedef struct decimal128_t {
   uint64_t array[NWORDS];
 } decimal128_t;
 
-int dec128_compare(decimal128_t left, decimal128_t right);
+/* comparison */
 bool dec128_cmpeq(decimal128_t left, decimal128_t right);
 bool dec128_cmpne(decimal128_t left, decimal128_t right);
 bool dec128_cmplt(decimal128_t left, decimal128_t right);
@@ -50,6 +50,7 @@ bool dec128_cmple(decimal128_t left, decimal128_t right);
 
 void dec128_print(FILE *fp, decimal128_t v, int precision, int scale);
 
+/* input from various formats */
 static inline decimal128_t dec128_from_lowbits(int64_t low_bits) {
   decimal128_t dec = {};
   if (low_bits < 0) {
@@ -89,14 +90,34 @@ static inline decimal128_t dec128_from_hilo(int64_t high, uint64_t low) {
 }
 #endif
 
-decimal128_t dec128_negate(decimal128_t v);
+decimal_status_t dec128_from_string(const char *s, decimal128_t *out,
+                                    int32_t *precision, int32_t *scale);
 
-decimal128_t *dec128_abs_inplace(decimal128_t *v);
-decimal128_t dec128_abs(decimal128_t v);
+decimal_status_t dec128_from_float(float real, decimal128_t *out,
+                                   int32_t precision, int32_t scale);
 
+decimal_status_t dec128_from_double(double real, decimal128_t *out,
+                                    int32_t precision, int32_t scale);
+
+/* output to various formats */
 static inline void dec128_to_bytes(decimal128_t v, uint8_t *out) {
   memcpy(out, v.array, sizeof(v.array));
 }
+
+decimal_status_t dec128_to_int64(decimal128_t v, int64_t *out);
+
+float dec128_to_float(decimal128_t v, int32_t scale);
+
+double dec128_to_double(decimal128_t v, int32_t scale);
+
+void dec128_to_string(decimal128_t v, char *out, int32_t scale);
+
+/* absolute */
+decimal128_t *dec128_abs_inplace(decimal128_t *v);
+decimal128_t dec128_abs(decimal128_t v);
+
+/* negate */
+decimal128_t dec128_negate(decimal128_t v);
 
 // return 1 if positive or zero, -1 if strictly negative
 static inline int64_t dec128_sign(decimal128_t v) {

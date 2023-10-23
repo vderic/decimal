@@ -92,7 +92,7 @@ int main() {
   printf("fit0 %d, fit1 %d\n", fit0, fit1);
 
   printf("fraction\n");
-  decimal128_t positive2 = dec128_from_hilo(1234567890, 9876);
+  decimal128_t positive2 = dec128_from_hilo(-1234567890, -9876);
   dec128_print(stdout, positive2, 38, 0);
   decimal128_t whole, fraction;
   s = dec128_get_whole_and_fraction(positive2, 4, &whole, &fraction);

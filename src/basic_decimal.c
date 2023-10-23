@@ -27,15 +27,7 @@ static const decimal128_t kDecimal128Zero = {0};
 #define UINT128_HIGH_BITS(v) (v >> 64)
 #define UINT128_LOW_BITS(v) (v & kInt64Mask)
 
-static inline decimal_status_t DecimalDivide(decimal128_t dividend,
-                                             decimal128_t divisor,
-                                             decimal128_t *result,
-                                             decimal128_t *remainder);
-
-static __uint128_t dec128_to_uint128(decimal128_t v) {
-  return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
-}
-
+/* print */
 void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
   // DECIMAL: Formula: unscaledValue * 10^(-scale)
   // int32: max precision is 9.
@@ -80,8 +72,7 @@ void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
   fprintf(fp, "\n");
 }
 
-int dec128_compare(decimal128_t v1, decimal128_t v2) { return 0; }
-
+/* comparison */
 bool dec128_cmpeq(decimal128_t left, decimal128_t right) {
   return dec128_high_bits(left) == dec128_high_bits(right) &&
          dec128_low_bits(left) == dec128_low_bits(right);
@@ -109,6 +100,30 @@ bool dec128_cmple(decimal128_t left, decimal128_t right) {
   return !dec128_cmpgt(left, right);
 }
 
+/* input */
+decimal_status_t dec128_from_string(const char *s, decimal128_t *out,
+                                    int32_t *precision, int32_t *scale);
+
+decimal_status_t dec128_from_float(float real, decimal128_t *out,
+                                   int32_t precision, int32_t scale);
+
+decimal_status_t dec128_from_double(double real, decimal128_t *out,
+                                    int32_t precision, int32_t scale);
+
+/* output to various formats */
+static __uint128_t dec128_to_uint128(decimal128_t v) {
+  return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
+}
+
+decimal_status_t dec128_to_int64(decimal128_t v, int64_t *out);
+
+float dec128_to_float(decimal128_t v, int32_t scale);
+
+double dec128_to_double(decimal128_t v, int32_t scale);
+
+void dec128_to_string(decimal128_t v, char *out, int32_t scale);
+
+/* negate */
 decimal128_t dec128_negate(decimal128_t v) {
   uint64_t result_lo = ~dec128_low_bits(v) + 1;
   int64_t result_hi = ~dec128_high_bits(v);
@@ -120,6 +135,7 @@ decimal128_t dec128_negate(decimal128_t v) {
   return res;
 }
 
+/* absolute */
 decimal128_t *dec128_abs_inplace(decimal128_t *v) {
   decimal128_t zero = {};
   if (dec128_cmplt(*v, zero)) {
@@ -134,6 +150,7 @@ decimal128_t dec128_abs(decimal128_t v) {
   return res;
 }
 
+/* sum */
 decimal128_t dec128_sum(decimal128_t left, decimal128_t right) {
   int64_t result_hi =
       SafeSignedAdd(dec128_high_bits(left), dec128_high_bits(right));
@@ -142,6 +159,7 @@ decimal128_t dec128_sum(decimal128_t left, decimal128_t right) {
   return dec128_from_hilo(result_hi, result_lo);
 }
 
+/* subtract */
 decimal128_t dec128_subtract(decimal128_t left, decimal128_t right) {
   int64_t result_hi =
       SafeSignedSubtract(dec128_high_bits(left), dec128_high_bits(right));
@@ -150,6 +168,7 @@ decimal128_t dec128_subtract(decimal128_t left, decimal128_t right) {
   return dec128_from_hilo(result_hi, result_lo);
 }
 
+/* multiply */
 decimal128_t dec128_multiply(decimal128_t left, decimal128_t right) {
   const bool negate = dec128_sign(left) != dec128_sign(right);
   decimal128_t x = dec128_abs(left);
@@ -164,11 +183,7 @@ decimal128_t dec128_multiply(decimal128_t left, decimal128_t right) {
   return res;
 }
 
-decimal_status_t dec128_divide(decimal128_t dividend, decimal128_t divisor,
-                               decimal128_t *result, decimal128_t *remainder) {
-  return DecimalDivide(dividend, divisor, result, remainder);
-}
-
+/* bitwise and */
 decimal128_t dec128_bitwise_and(decimal128_t left, decimal128_t right) {
   decimal128_t res;
   res.array[0] = left.array[0] & right.array[0];
@@ -176,6 +191,7 @@ decimal128_t dec128_bitwise_and(decimal128_t left, decimal128_t right) {
   return res;
 }
 
+/* bitwise or */
 decimal128_t dec128_bitwise_or(decimal128_t left, decimal128_t right) {
   decimal128_t res;
   res.array[0] = left.array[0] | right.array[0];
@@ -183,6 +199,7 @@ decimal128_t dec128_bitwise_or(decimal128_t left, decimal128_t right) {
   return res;
 }
 
+/* bitwise shift left */
 decimal128_t dec128_bitwise_shift_left(decimal128_t v, uint32_t bits) {
   decimal128_t res = v;
   if (bits != 0) {
@@ -204,6 +221,7 @@ decimal128_t dec128_bitwise_shift_left(decimal128_t v, uint32_t bits) {
   return res;
 }
 
+/* bitwise shift right */
 decimal128_t dec128_bitwise_shift_right(decimal128_t v, uint32_t bits) {
   decimal128_t res = v;
   if (bits != 0) {
@@ -225,18 +243,7 @@ decimal128_t dec128_bitwise_shift_right(decimal128_t v, uint32_t bits) {
   return res;
 }
 
-decimal_status_t dec128_get_whole_and_fraction(decimal128_t v, int32_t scale,
-                                               decimal128_t *whole,
-                                               decimal128_t *fraction) {
-  // DCHECK_GE(scale, 0);
-  // DCHECK_LE(scale, 38);
-
-  decimal128_t multiplier = kDecimal128PowersOfTen[scale];
-  decimal_status_t status = dec128_divide(v, multiplier, whole, fraction);
-  // DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
-  return status;
-}
-
+/* get scale multipler */
 decimal128_t dec128_get_scale_multipler(int32_t scale) {
   // DCHECK_GE(scale, 0);
   // DCHECK_LE(scale, 38);
@@ -244,6 +251,7 @@ decimal128_t dec128_get_scale_multipler(int32_t scale) {
   return kDecimal128PowersOfTen[scale];
 }
 
+/* get half scale mutlipler */
 decimal128_t dec128_get_half_scale_multipler(int32_t scale) {
   // DCHECK_GE(scale, 0);
   // DCHECK_LE(scale, 38);
@@ -251,6 +259,7 @@ decimal128_t dec128_get_half_scale_multipler(int32_t scale) {
   return kDecimal128HalfPowersOfTen[scale];
 }
 
+/* get max value */
 decimal128_t dec128_max_value() { return kMaxDecimal128Value; }
 
 decimal128_t dec128_max(int32_t precision) {
@@ -261,79 +270,7 @@ decimal128_t dec128_max(int32_t precision) {
                          dec128_from_int64(1));
 }
 
-static bool rescale_would_cause_data_loss(decimal128_t value,
-                                          int32_t delta_scale,
-                                          decimal128_t multiplier,
-                                          decimal128_t *result) {
-
-  if (delta_scale < 0) {
-    // DCHECK_NE(multiplier, 0);
-    decimal128_t remainder;
-    decimal_status_t status =
-        dec128_divide(value, multiplier, result, &remainder);
-    // DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
-    return dec128_cmpne(remainder, kDecimal128Zero);
-  }
-
-  *result = dec128_multiply(value, multiplier);
-  return dec128_cmplt(value, kDecimal128Zero) ? dec128_cmpgt(*result, value)
-                                              : dec128_cmplt(*result, value);
-}
-
-decimal_status_t dec128_rescale(decimal128_t v, int32_t original_scale,
-                                int32_t new_scale, decimal128_t *out) {
-  // DCHECK_NE(out, NULL);
-
-  if (original_scale == new_scale) {
-    *out = v;
-    return DEC128_STATUS_SUCCESS;
-  }
-
-  const int32_t delta_scale = new_scale - original_scale;
-  const int32_t abs_delta_scale = abs(delta_scale);
-
-  decimal128_t multiplier = dec128_get_scale_multipler(abs_delta_scale);
-
-  const bool rescale_data_loss =
-      rescale_would_cause_data_loss(v, delta_scale, multiplier, out);
-
-  if (rescale_data_loss) {
-    return DEC128_STATUS_RESCALEDATALOSS;
-  }
-  return DEC128_STATUS_SUCCESS;
-}
-
-decimal128_t dec128_increase_scale_by(decimal128_t v, int32_t increase_by) {
-  // DCHECK_GE(increase_by 0);
-  // DCHECK_LE(increase_by 38);
-
-  return dec128_multiply(v, kDecimal128PowersOfTen[increase_by]);
-}
-
-decimal128_t dec128_reduce_scale_by(decimal128_t v, int32_t reduce_by,
-                                    bool round) {
-  // DCHECK_GE(reduce_by, 0);
-  // DCHECK_LLE(reduce_by, 38);
-
-  if (reduce_by == 0) {
-    return v;
-  }
-
-  decimal128_t divisor = kDecimal128PowersOfTen[reduce_by];
-  decimal128_t result;
-  decimal128_t remainder;
-  decimal_status_t s = dec128_divide(v, divisor, &result, &remainder);
-  // DCHECK(s, DEC128_STATUS_SUCCESS);
-  if (round) {
-    if (dec128_cmpge(dec128_abs(remainder),
-                     kDecimal128HalfPowersOfTen[reduce_by])) {
-      decimal128_t sign = dec128_from_int64(dec128_sign(v));
-      result = dec128_sum(result, sign);
-    }
-  }
-  return result;
-}
-
+/* fits in precision */
 bool dec128_fits_in_precision(decimal128_t v, int32_t precision) {
   if (!(precision > 0 && precision < 38)) {
     return false;
@@ -625,4 +562,97 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
   FixDivisionSigns(result, remainder, dividend_was_negative,
                    divisor_was_negative);
   return DEC128_STATUS_SUCCESS;
+}
+
+/* divide */
+decimal_status_t dec128_divide(decimal128_t dividend, decimal128_t divisor,
+                               decimal128_t *result, decimal128_t *remainder) {
+  return DecimalDivide(dividend, divisor, result, remainder);
+}
+
+/* get whole and fraction */
+decimal_status_t dec128_get_whole_and_fraction(decimal128_t v, int32_t scale,
+                                               decimal128_t *whole,
+                                               decimal128_t *fraction) {
+  // DCHECK_GE(scale, 0);
+  // DCHECK_LE(scale, 38);
+
+  decimal128_t multiplier = kDecimal128PowersOfTen[scale];
+  decimal_status_t status = dec128_divide(v, multiplier, whole, fraction);
+  // DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
+  return status;
+}
+
+/* rescale */
+static bool rescale_would_cause_data_loss(decimal128_t value,
+                                          int32_t delta_scale,
+                                          decimal128_t multiplier,
+                                          decimal128_t *result) {
+
+  if (delta_scale < 0) {
+    // DCHECK_NE(multiplier, 0);
+    decimal128_t remainder;
+    decimal_status_t status =
+        dec128_divide(value, multiplier, result, &remainder);
+    // DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
+    return dec128_cmpne(remainder, kDecimal128Zero);
+  }
+
+  *result = dec128_multiply(value, multiplier);
+  return dec128_cmplt(value, kDecimal128Zero) ? dec128_cmpgt(*result, value)
+                                              : dec128_cmplt(*result, value);
+}
+
+decimal_status_t dec128_rescale(decimal128_t v, int32_t original_scale,
+                                int32_t new_scale, decimal128_t *out) {
+  // DCHECK_NE(out, NULL);
+
+  if (original_scale == new_scale) {
+    *out = v;
+    return DEC128_STATUS_SUCCESS;
+  }
+
+  const int32_t delta_scale = new_scale - original_scale;
+  const int32_t abs_delta_scale = abs(delta_scale);
+
+  decimal128_t multiplier = dec128_get_scale_multipler(abs_delta_scale);
+
+  const bool rescale_data_loss =
+      rescale_would_cause_data_loss(v, delta_scale, multiplier, out);
+
+  if (rescale_data_loss) {
+    return DEC128_STATUS_RESCALEDATALOSS;
+  }
+  return DEC128_STATUS_SUCCESS;
+}
+
+decimal128_t dec128_increase_scale_by(decimal128_t v, int32_t increase_by) {
+  // DCHECK_GE(increase_by 0);
+  // DCHECK_LE(increase_by 38);
+
+  return dec128_multiply(v, kDecimal128PowersOfTen[increase_by]);
+}
+
+decimal128_t dec128_reduce_scale_by(decimal128_t v, int32_t reduce_by,
+                                    bool round) {
+  // DCHECK_GE(reduce_by, 0);
+  // DCHECK_LLE(reduce_by, 38);
+
+  if (reduce_by == 0) {
+    return v;
+  }
+
+  decimal128_t divisor = kDecimal128PowersOfTen[reduce_by];
+  decimal128_t result;
+  decimal128_t remainder;
+  decimal_status_t s = dec128_divide(v, divisor, &result, &remainder);
+  // DCHECK(s, DEC128_STATUS_SUCCESS);
+  if (round) {
+    if (dec128_cmpge(dec128_abs(remainder),
+                     kDecimal128HalfPowersOfTen[reduce_by])) {
+      decimal128_t sign = dec128_from_int64(dec128_sign(v));
+      result = dec128_sum(result, sign);
+    }
+  }
+  return result;
 }
