@@ -113,7 +113,8 @@ int main() {
 
   int precision, scale;
   decimal128_t fromstr;
-  s = dec128_from_string("12345678901234", &fromstr, &precision, &scale);
+  s = dec128_from_string("-12345678901234.9876543", &fromstr, &precision,
+                         &scale);
 
   dec128_print(stdout, fromstr, precision, scale);
 

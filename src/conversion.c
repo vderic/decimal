@@ -344,7 +344,7 @@ static void AdjustIntegerStringWithScale(char *str, int32_t scale,
     // Example 2:
     // Precondition: *str = "-123", len = 4, num_digits = 3, scale = 1, n = 3
     // After inserting decimal point: *str = "-12.3"
-    strncpy(out, str, n);
+    memcpy(out, str, n);
     out += n;
     out += sprintf(out, ".");
     out += sprintf(out, "%s", str + n);
