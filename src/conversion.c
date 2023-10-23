@@ -1,4 +1,5 @@
 #include "basic_decimal.h"
+#include "decimal_internal.h"
 #include <assert.h>
 
 /* print */

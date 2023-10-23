@@ -1,5 +1,5 @@
 #ifndef DECIMAL_INTERNAL_H_
-#define DECIMAL_INTERMAL_H_
+#define DECIMAL_INTERNAL_H_
 
 #include "basic_decimal.h"
 #include <limits.h>
@@ -9,7 +9,7 @@
 // std::numeric_limits<int64_t>::digits10);
 #define kInt64DecimalDigits 18
 
-const uint64_t kUInt64PowersOfTen[kInt64DecimalDigits + 1] = {
+static const uint64_t kUInt64PowersOfTen[kInt64DecimalDigits + 1] = {
     // clang-format off
     1ULL,
     10ULL,
@@ -44,7 +44,7 @@ const uint64_t kUInt64PowersOfTen[kInt64DecimalDigits + 1] = {
 
 #define kPrecomputedPowersOfTen 76
 
-const float kFloatPowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
+static const float kFloatPowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
     0,         0,         0,         0,         0,         0,         0,
     0,         0,         0,         0,         0,         0,         0,
     0,         0,         0,         0,         0,         0,         0,
@@ -68,7 +68,7 @@ const float kFloatPowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
     kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf,
     kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf, kFloatInf};
 
-const double kDoublePowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
+static const double kDoublePowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
     1e-76, 1e-75, 1e-74, 1e-73, 1e-72, 1e-71, 1e-70, 1e-69, 1e-68, 1e-67, 1e-66,
     1e-65, 1e-64, 1e-63, 1e-62, 1e-61, 1e-60, 1e-59, 1e-58, 1e-57, 1e-56, 1e-55,
     1e-54, 1e-53, 1e-52, 1e-51, 1e-50, 1e-49, 1e-48, 1e-47, 1e-46, 1e-45, 1e-44,
@@ -85,7 +85,7 @@ const double kDoublePowersOfTen[2 * kPrecomputedPowersOfTen + 1] = {
     1e67,  1e68,  1e69,  1e70,  1e71,  1e72,  1e73,  1e74,  1e75,  1e76};
 
 #if DEC128_LITTLE_ENDIAN
-const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
+static const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
     {{1LL, 0ULL}},
     {{10LL, 0ULL}},
     {{100LL, 0ULL}},
@@ -126,7 +126,7 @@ const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
     {{68739955140067328ULL, 542101086242752217LL}},
     {{687399551400673280ULL, 5421010862427522170LL}}};
 
-const decimal128_t kDecimal128HalfPowersOfTen[] = {
+static const decimal128_t kDecimal128HalfPowersOfTen[] = {
     {{0ULL, 0ULL}},
     {{5ULL, 0ULL}},
     {{50ULL, 0ULL}},
@@ -169,7 +169,7 @@ const decimal128_t kDecimal128HalfPowersOfTen[] = {
 
 #else
 
-const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
+static const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
     {{0LL, 1LL}},
     {{0LL, 10LL}},
     {{0LL, 100LL}},
@@ -210,7 +210,7 @@ const decimal128_t kDecimal128PowersOfTen[38 + 1] = {
     {{542101086242752217LL, 68739955140067328ULL}},
     {{5421010862427522170LL, 687399551400673280ULL}}};
 
-const decimal128_t kDecimal128HalfPowersOfTen[] = {
+static const decimal128_t kDecimal128HalfPowersOfTen[] = {
     {{0LL, 0ULL}},
     {{0LL, 5ULL}},
     {{0LL, 50ULL}},
@@ -254,7 +254,7 @@ const decimal128_t kDecimal128HalfPowersOfTen[] = {
 #endif
 
 // ceil(log2(10 ^ k)) for k in [0...76]
-const int kCeilLog2PowersOfTen[76 + 1] = {
+static const int kCeilLog2PowersOfTen[76 + 1] = {
     0,   4,   7,   10,  14,  17,  20,  24,  27,  30,  34,  37,  40,
     44,  47,  50,  54,  57,  60,  64,  67,  70,  74,  77,  80,  84,
     87,  90,  94,  97,  100, 103, 107, 110, 113, 117, 120, 123, 127,
