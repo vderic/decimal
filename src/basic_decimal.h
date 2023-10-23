@@ -37,6 +37,7 @@ typedef enum decimal_status_t {
   DEC128_STATUS_DIVIDEDBYZERO,
   DEC128_STATUS_OVERFLOW,
   DEC128_STATUS_RESCALEDATALOSS,
+  DEC128_STATUS_ERROR,
 } decimal_status_t;
 
 typedef struct decimal128_t {

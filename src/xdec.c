@@ -111,5 +111,11 @@ int main() {
   dec128_to_string(smallint, output, 6);
   printf("dec128_to_string %s\n", output);
 
+  int precision, scale;
+  decimal128_t fromstr;
+  s = dec128_from_string("12345678901234", &fromstr, &precision, &scale);
+
+  dec128_print(stdout, fromstr, precision, scale);
+
   return 0;
 }

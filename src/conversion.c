@@ -1,7 +1,192 @@
 #include "basic_decimal.h"
 #include "bit_util.h"
 #include "decimal_internal.h"
+#include "value_parsing.h"
 #include <assert.h>
+#include <math.h>
+
+typedef struct decimal_components_t {
+  char whole_digits[DEC128_MAX_STRLEN];
+  char fractional_digits[DEC128_MAX_STRLEN];
+  int32_t exponent;
+  char sign;
+  bool has_exponent;
+} decimal_components_t;
+
+static inline bool IsSign(char c) { return c == '-' || c == '+'; }
+
+static inline bool IsDot(char c) { return c == '.'; }
+
+static inline bool IsDigit(char c) { return c >= '0' && c <= '9'; }
+
+static inline bool StartsExponent(char c) { return c == 'e' || c == 'E'; }
+
+static inline size_t ParseDigitsRun(const char *s, size_t start, size_t size,
+                                    char *out) {
+  size_t pos;
+  for (pos = start; pos < size; ++pos) {
+    if (!IsDigit(s[pos])) {
+      break;
+    }
+  }
+  strncpy(out, s + start, pos - start);
+  return pos;
+}
+
+static bool ParseDecimalComponents(const char *s, decimal_components_t *out) {
+  size_t pos = 0;
+  size_t size = strlen(s);
+
+  if (size == 0) {
+    return false;
+  }
+  // Sign of the number
+  if (IsSign(s[pos])) {
+    out->sign = *(s + pos);
+    ++pos;
+  }
+  // First run of digits
+  pos = ParseDigitsRun(s, pos, size, (char *)out->whole_digits);
+  if (pos == size) {
+    return !(*out->whole_digits == 0);
+  }
+  // Optional dot (if given in fractional form)
+  bool has_dot = IsDot(s[pos]);
+  if (has_dot) {
+    // Second run of digits
+    ++pos;
+    pos = ParseDigitsRun(s, pos, size, out->fractional_digits);
+  }
+  if (*out->whole_digits == 0 && *out->fractional_digits == 0) {
+    // Need at least some digits (whole or fractional)
+    return false;
+  }
+  if (pos == size) {
+    return true;
+  }
+  // Optional exponent
+  if (StartsExponent(s[pos])) {
+    ++pos;
+    if (pos != size && s[pos] == '+') {
+      ++pos;
+    }
+    out->has_exponent = true;
+
+    char exp[size - pos + 1];
+    strncpy(exp, s + pos, size - pos);
+    out->exponent = atoi(exp);
+    return true;
+  }
+  return pos == size;
+}
+
+static inline size_t find_first_not_of(char *s, char c) {
+  size_t len = strlen(s);
+  for (size_t i = 0; i < len; i++) {
+    if (s[i] != c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// Iterates over input and for each group of kInt64DecimalDigits multiple out by
+// the appropriate power of 10 necessary to add source parsed as uint64 and
+// then adds the parsed value of source.
+static inline void ShiftAndAdd(const char *input, uint64_t out[],
+                               size_t out_size) {
+  size_t len = strlen(input);
+  for (size_t posn = 0; posn < len;) {
+    const size_t group_size = MIN(kInt64DecimalDigits, len - posn);
+    const uint64_t multiple = kUInt64PowersOfTen[group_size];
+    uint64_t chunk = 0;
+
+    if (!ParseUInt64(input + posn, group_size, &chunk)) {
+      // error here
+      fprintf(stderr, "parse uint64 error");
+      return;
+    }
+
+    for (size_t i = 0; i < out_size; ++i) {
+      __uint128_t tmp = out[i];
+      tmp *= multiple;
+      tmp += chunk;
+      out[i] = (uint64_t)(tmp & 0xFFFFFFFFFFFFFFFFULL);
+      chunk = (uint64_t)(tmp >> 64);
+    }
+    posn += group_size;
+  }
+}
+
+static decimal_status_t DecimalFromString(const char *s, decimal128_t *out,
+                                          int32_t *precision, int32_t *scale) {
+  if (*s == 0) {
+    // return Status::Invalid("Empty string cannot be converted to ",
+    // type_name);
+    return DEC128_STATUS_ERROR;
+  }
+
+  decimal_components_t dec = {0};
+  if (!ParseDecimalComponents(s, &dec)) {
+    // return Status::Invalid("The string '", s, "' is not a valid ", type_name,
+    // " number");
+    return DEC128_STATUS_ERROR;
+  }
+
+  // Count number of significant digits (without leading zeros)
+  size_t first_non_zero = find_first_not_of(dec.whole_digits, '0');
+  size_t significant_digits = strlen(dec.fractional_digits);
+  if (first_non_zero != -1) {
+    significant_digits += strlen(dec.whole_digits) - first_non_zero;
+  }
+  int32_t parsed_precision = (int32_t)(significant_digits);
+
+  int32_t parsed_scale = 0;
+  if (dec.has_exponent) {
+    int32_t adjusted_exponent = dec.exponent;
+    parsed_scale = -adjusted_exponent + (int32_t)strlen(dec.fractional_digits);
+  } else {
+    parsed_scale = (int32_t)strlen(dec.fractional_digits);
+  }
+
+  if (out != NULL) {
+    size_t N = DEC128_BIT_WIDTH / 64;
+    uint64_t little_endian_array[N];
+    memset(little_endian_array, 0, sizeof(little_endian_array));
+    ShiftAndAdd(dec.whole_digits, little_endian_array, N);
+    ShiftAndAdd(dec.fractional_digits, little_endian_array, N);
+    *out = dec128_from_hilo((int64_t)little_endian_array[1],
+                            little_endian_array[0]);
+    if (dec.sign == '-') {
+      *out = dec128_negate(*out);
+    }
+  }
+
+  if (parsed_scale < 0) {
+    // Force the scale to zero, to avoid negative scales (due to compatibility
+    // issues with external systems such as databases)
+    if (-parsed_scale > DEC128_MAX_SCALE) {
+      // return Status::Invalid("The string '", s, "' cannot be represented as
+      // ", type_name);
+      return DEC128_STATUS_ERROR;
+    }
+    if (out != NULL) {
+      decimal128_t multipler = dec128_get_scale_multipler(-parsed_scale);
+      *out = dec128_multiply(*out, multipler);
+    }
+    parsed_precision -= parsed_scale;
+    parsed_scale = 0;
+  }
+
+  if (precision != NULL) {
+    *precision = parsed_precision;
+  }
+  if (scale != NULL) {
+    *scale = parsed_scale;
+  }
+
+  return DEC128_STATUS_SUCCESS;
+}
 
 /* print */
 void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
@@ -139,7 +324,8 @@ static void AdjustIntegerStringWithScale(char *str, int32_t scale,
     // After appending exponent: *str = "-1.23E-7"
 
     int32_t dotpos = 1 + is_negative_offset;
-    out += snprintf(out, "%s", str, dotpos);
+    strncpy(out, str, dotpos);
+    out += dotpos;
     out += sprintf(out, ".");
     out += sprintf(out, "%s", str + dotpos);
     out += sprintf(out, "E");
@@ -158,9 +344,10 @@ static void AdjustIntegerStringWithScale(char *str, int32_t scale,
     // Example 2:
     // Precondition: *str = "-123", len = 4, num_digits = 3, scale = 1, n = 3
     // After inserting decimal point: *str = "-12.3"
-    out += snprintf(out, "%s", str, n);
+    strncpy(out, str, n);
+    out += n;
     out += sprintf(out, ".");
-    out += snprintf(out, "%s", str + n);
+    out += sprintf(out, "%s", str + n);
     return;
   }
 
@@ -185,7 +372,9 @@ static void AdjustIntegerStringWithScale(char *str, int32_t scale,
 
 /* input */
 decimal_status_t dec128_from_string(const char *s, decimal128_t *out,
-                                    int32_t *precision, int32_t *scale);
+                                    int32_t *precision, int32_t *scale) {
+  return DecimalFromString(s, out, precision, scale);
+}
 
 decimal_status_t dec128_from_float(float real, decimal128_t *out,
                                    int32_t precision, int32_t scale);
