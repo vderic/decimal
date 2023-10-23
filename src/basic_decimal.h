@@ -107,6 +107,8 @@ static inline void dec128_to_bytes(decimal128_t v, uint8_t *out) {
   memcpy(out, v.array, sizeof(v.array));
 }
 
+decimal_status_t dec128_to_integer_string(decimal128_t v, char *out);
+
 decimal_status_t dec128_to_int64(decimal128_t v, int64_t *out);
 
 float dec128_to_float(decimal128_t v, int32_t scale);

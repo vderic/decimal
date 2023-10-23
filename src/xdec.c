@@ -103,5 +103,10 @@ int main() {
   dec128_print(stdout, whole, 38, 0);
   dec128_print(stdout, fraction, 38, 0);
 
+  char output[DEC128_MAX_STRLEN];
+  dec128_to_integer_string(positive2, output);
+
+  printf("dec128_to_integer_string %s\n", output);
+
   return 0;
 }

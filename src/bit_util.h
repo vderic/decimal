@@ -16,6 +16,12 @@
 #define ARROW_POPCOUNT32 __builtin_popcount
 #endif
 
+// Returns a mask for the bit_index lower order bits.
+// Only valid for bit_index in the range [0, 64).
+static inline uint64_t LeastSignificantBitMask(int64_t bit_index) {
+  return (((uint64_t)(1)) << bit_index) - 1;
+}
+
 /// \brief Count the number of leading zeros in an unsigned integer.
 static inline int CountLeadingZeros(uint32_t value) {
 #if defined(__clang__) || defined(__GNUC__)
