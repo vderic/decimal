@@ -105,8 +105,11 @@ int main() {
 
   char output[DEC128_MAX_STRLEN];
   dec128_to_integer_string(positive2, output);
-
   printf("dec128_to_integer_string %s\n", output);
+
+  decimal128_t smallint = dec128_from_int64(123);
+  dec128_to_string(smallint, output, 6);
+  printf("dec128_to_string %s\n", output);
 
   return 0;
 }

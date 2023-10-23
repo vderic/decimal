@@ -109,6 +109,78 @@ static void AppendLittleEndianArrayToString(const uint64_t *array, size_t n,
   }
 }
 
+static void AdjustIntegerStringWithScale(char *str, int32_t scale,
+                                         char *result) {
+  if (scale == 0) {
+    return;
+  }
+  // DCHECK(str != NULL);
+  // DCHECK(!(*str == 0));
+  const bool is_negative = *str == '-';
+  const int32_t is_negative_offset = (int32_t)(is_negative);
+  const int32_t len = strlen(str);
+  const int32_t num_digits = len - is_negative_offset;
+  const int32_t adjusted_exponent = num_digits - 1 - scale;
+  char *out = result;
+
+  /// Note that the -6 is taken from the Java BigDecimal documentation.
+  if (scale < 0 || adjusted_exponent < -6) {
+    // Example 1:
+    // Precondition: *str = "123", is_negative_offset = 0, num_digits = 3, scale
+    // = -2,
+    //               adjusted_exponent = 4
+    // After inserting decimal point: *str = "1.23"
+    // After appending exponent: *str = "1.23E+4"
+    // Example 2:
+    // Precondition: *str = "-123", is_negative_offset = 1, num_digits = 3,
+    // scale = 9,
+    //               adjusted_exponent = -7
+    // After inserting decimal point: *str = "-1.23"
+    // After appending exponent: *str = "-1.23E-7"
+
+    int32_t dotpos = 1 + is_negative_offset;
+    out += snprintf(out, "%s", str, dotpos);
+    out += sprintf(out, ".");
+    out += sprintf(out, "%s", str + dotpos);
+    out += sprintf(out, "E");
+    if (adjusted_exponent >= 0) {
+      out += sprintf(out, "+");
+    }
+    out += sprintf(out, "%d", adjusted_exponent);
+    return;
+  }
+
+  if (num_digits > scale) {
+    const size_t n = (size_t)(len - scale);
+    // Example 1:
+    // Precondition: *str = "123", len = num_digits = 3, scale = 1, n = 2
+    // After inserting decimal point: *str = "12.3"
+    // Example 2:
+    // Precondition: *str = "-123", len = 4, num_digits = 3, scale = 1, n = 3
+    // After inserting decimal point: *str = "-12.3"
+    out += snprintf(out, "%s", str, n);
+    out += sprintf(out, ".");
+    out += snprintf(out, "%s", str + n);
+    return;
+  }
+
+  // Example 1:
+  // Precondition: *str = "123", is_negative_offset = 0, num_digits = 3, scale =
+  // 4 After insert: *str = "000123" After setting decimal point: *str =
+  // "0.0123" Example 2: Precondition: *str = "-123", is_negative_offset = 1,
+  // num_digits = 3, scale = 4 After insert: *str = "-000123" After setting
+  // decimal point: *str = "-0.0123"
+  char *p = out;
+  if (is_negative) {
+    out += sprintf(out, "-");
+  }
+  for (int i = 0; i < scale - num_digits + 2; i++) {
+    out += sprintf(out, "0");
+  }
+  out += sprintf(out, "%s", str + is_negative_offset);
+  p[is_negative_offset + 1] = '.';
+}
+
 /* input */
 decimal_status_t dec128_from_string(const char *s, decimal128_t *out,
                                     int32_t *precision, int32_t *scale);
@@ -141,4 +213,9 @@ float dec128_to_float(decimal128_t v, int32_t scale);
 
 double dec128_to_double(decimal128_t v, int32_t scale);
 
-void dec128_to_string(decimal128_t v, char *out, int32_t scale);
+void dec128_to_string(decimal128_t v, char *out, int32_t scale) {
+  decimal_status_t s;
+  char intstr[DEC128_MAX_STRLEN];
+  s = dec128_to_integer_string(v, intstr);
+  AdjustIntegerStringWithScale(intstr, scale, out);
+}
