@@ -24,52 +24,12 @@ static const decimal128_t kDecimal128One = {{0, 1}};
 
 static const decimal128_t kDecimal128Zero = {0};
 
+/* int128 */
 #define UINT128_HIGH_BITS(v) (v >> 64)
 #define UINT128_LOW_BITS(v) (v & kInt64Mask)
 
-/* print */
-void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
-  // DECIMAL: Formula: unscaledValue * 10^(-scale)
-  // int32: max precision is 9.
-  // int64: max precision is 18.
-  // int128: max precision is 38.
-  // int256: max precision is 76. (not supported).
-
-  __int128_t value;
-  dec128_to_bytes(v, &value);
-
-  assert(precision >= 1 && precision <= 38);
-  assert(scale >= 0 && scale < precision);
-  const int sign = (value < 0);
-  __uint128_t tmp = (sign ? -value : value);
-
-  char buffer[128];
-  char *p = &buffer[sizeof(buffer) - 1];
-  *p = 0;
-
-  for (; scale > 0; scale--, precision--) {
-    *--p = '0' + (tmp % 10);
-    tmp /= 10;
-  }
-
-  if (*p) {
-    *--p = '.';
-  }
-
-  for (; precision > 0 && tmp; precision--) {
-    *--p = '0' + (tmp % 10);
-    tmp /= 10;
-  }
-
-  if (*p == '.' || *p == 0) {
-    *--p = '0';
-  }
-
-  if (sign) {
-    *--p = '-';
-  }
-  fprintf(fp, "%s", p);
-  fprintf(fp, "\n");
+static __uint128_t dec128_to_uint128(decimal128_t v) {
+  return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
 }
 
 /* comparison */
@@ -99,29 +59,6 @@ bool dec128_cmpge(decimal128_t left, decimal128_t right) {
 bool dec128_cmple(decimal128_t left, decimal128_t right) {
   return !dec128_cmpgt(left, right);
 }
-
-/* input */
-decimal_status_t dec128_from_string(const char *s, decimal128_t *out,
-                                    int32_t *precision, int32_t *scale);
-
-decimal_status_t dec128_from_float(float real, decimal128_t *out,
-                                   int32_t precision, int32_t scale);
-
-decimal_status_t dec128_from_double(double real, decimal128_t *out,
-                                    int32_t precision, int32_t scale);
-
-/* output to various formats */
-static __uint128_t dec128_to_uint128(decimal128_t v) {
-  return (((__uint128_t)dec128_high_bits(v)) << 64) | dec128_low_bits(v);
-}
-
-decimal_status_t dec128_to_int64(decimal128_t v, int64_t *out);
-
-float dec128_to_float(decimal128_t v, int32_t scale);
-
-double dec128_to_double(decimal128_t v, int32_t scale);
-
-void dec128_to_string(decimal128_t v, char *out, int32_t scale);
 
 /* negate */
 decimal128_t dec128_negate(decimal128_t v) {

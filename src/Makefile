@@ -15,7 +15,7 @@ endif
 CFLAGS += -std=c99
 LDLIBS = -lpthread -ldl
 
-CFILES = basic_decimal.c
+CFILES = basic_decimal.c conversion.c
 
 OBJS = $(CFILES:.c=.o)
 EXECS = xdec
