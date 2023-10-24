@@ -13,17 +13,21 @@ ifdef PROFILE
 endif
 
 CFLAGS += -std=c99
+CXXFLAGS += $(filter-out -std=c99, $(CFLAGS))  -std=c++17 -static-libstdc++
 LDLIBS = -lpthread -ldl -lm
 
 CFILES = basic_decimal.c conversion.c
 
 OBJS = $(CFILES:.c=.o)
-EXECS = xdec
+EXECS = xdec xdec2
 
 all: libdec128.a $(EXECS) 
 
 xdec: xdec.c libdec128.a
 	$(CC) $(CFLAGS) -o $@ $(filter-out %.hpp %.h, $^) $(LDFLAGS) $(LDLIBS)
+
+xdec2: xdec2.cpp libdec128.a
+	$(CXX) $(CXXFLAGS) -o $@ $(filter-out %.hpp %.h, $^) $(LDFLAGS) $(LDLIBS)
 
 libdec128.a: $(OBJS)
 	ar -rcs $@ $^
