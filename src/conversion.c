@@ -308,7 +308,8 @@ static float ToRealPositiveNoSplit_float(decimal128_t decimal, int32_t scale) {
   TO_REAL_POSITIVE_NO_SPLIT(float);
 }
 
-static double ToRealPositiveNoSplit_double(decimal128_t decimal, int32_t scale) {
+static double ToRealPositiveNoSplit_double(decimal128_t decimal,
+                                           int32_t scale) {
   TO_REAL_POSITIVE_NO_SPLIT(double);
 }
 
@@ -663,8 +664,8 @@ static void AdjustIntegerStringWithScale(char *str, int32_t scale,
   if (scale == 0) {
     return;
   }
-  // DCHECK(str != NULL);
-  // DCHECK(!(*str == 0));
+  DCHECK(str != NULL);
+  DCHECK(!(*str == 0));
   const bool is_negative = *str == '-';
   const int32_t is_negative_offset = (int32_t)(is_negative);
   const int32_t len = strlen(str);

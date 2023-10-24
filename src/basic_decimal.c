@@ -2,6 +2,7 @@
 #include "bit_util.h"
 #include "decimal_internal.h"
 #include "int_util_overflow.h"
+#include "logging.h"
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
@@ -182,16 +183,16 @@ decimal128_t dec128_bitwise_shift_right(decimal128_t v, uint32_t bits) {
 
 /* get scale multipler */
 decimal128_t dec128_get_scale_multipler(int32_t scale) {
-  // DCHECK_GE(scale, 0);
-  // DCHECK_LE(scale, 38);
+  DCHECK_GE(scale, 0);
+  DCHECK_LE(scale, 38);
 
   return kDecimal128PowersOfTen[scale];
 }
 
 /* get half scale mutlipler */
 decimal128_t dec128_get_half_scale_multipler(int32_t scale) {
-  // DCHECK_GE(scale, 0);
-  // DCHECK_LE(scale, 38);
+  DCHECK_GE(scale, 0);
+  DCHECK_LE(scale, 38);
 
   return kDecimal128HalfPowersOfTen[scale];
 }
@@ -200,8 +201,8 @@ decimal128_t dec128_get_half_scale_multipler(int32_t scale) {
 decimal128_t dec128_max_value() { return kMaxDecimal128Value; }
 
 decimal128_t dec128_max(int32_t precision) {
-  // DCHECK_GE(precision, 0);
-  // DCHECK_LE(precision, 38);
+  DCHECK_GE(precision, 0);
+  DCHECK_LE(precision, 38);
 
   return dec128_subtract(kDecimal128PowersOfTen[precision],
                          dec128_from_int64(1));
@@ -216,7 +217,7 @@ bool dec128_fits_in_precision(decimal128_t v, int32_t precision) {
 }
 
 int32_t dec128_count_leading_binary_zeros(decimal128_t v) {
-  // DCHECK_GE(v, kDecimal128Zero);
+  DCHECK_GE(v, kDecimal128Zero);
 
   if (dec128_high_bits(v) == 0) {
     return CountLeadingZeros(dec128_low_bits(v)) + 64;
@@ -421,7 +422,7 @@ static inline decimal_status_t DecimalDivide(decimal128_t dividend,
 
   int64_t result_length = dividend_length - divisor_length;
   uint32_t result_array[kDecimalArrayLength];
-  // DCHECK_LE(result_length, kDecimalArrayLength);
+  DCHECK_LE(result_length, kDecimalArrayLength);
 
   // Normalize by shifting both by a multiple of 2 so that
   // the digit guessing is better. The requirement is that
@@ -511,12 +512,12 @@ decimal_status_t dec128_divide(decimal128_t dividend, decimal128_t divisor,
 decimal_status_t dec128_get_whole_and_fraction(decimal128_t v, int32_t scale,
                                                decimal128_t *whole,
                                                decimal128_t *fraction) {
-  // DCHECK_GE(scale, 0);
-  // DCHECK_LE(scale, 38);
+  DCHECK_GE(scale, 0);
+  DCHECK_LE(scale, 38);
 
   decimal128_t multiplier = kDecimal128PowersOfTen[scale];
   decimal_status_t status = dec128_divide(v, multiplier, whole, fraction);
-  // DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
+  DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
   return status;
 }
 
@@ -527,11 +528,11 @@ static bool rescale_would_cause_data_loss(decimal128_t value,
                                           decimal128_t *result) {
 
   if (delta_scale < 0) {
-    // DCHECK_NE(multiplier, 0);
+    DCHECK_NE(multiplier, 0);
     decimal128_t remainder;
     decimal_status_t status =
         dec128_divide(value, multiplier, result, &remainder);
-    // DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
+    DCHECK_EQ(status, DEC128_STATUS_SUCCESS);
     return dec128_cmpne(remainder, kDecimal128Zero);
   }
 
@@ -542,7 +543,7 @@ static bool rescale_would_cause_data_loss(decimal128_t value,
 
 decimal_status_t dec128_rescale(decimal128_t v, int32_t original_scale,
                                 int32_t new_scale, decimal128_t *out) {
-  // DCHECK_NE(out, NULL);
+  DCHECK_NE(out, NULL);
 
   if (original_scale == new_scale) {
     *out = v;
@@ -564,16 +565,16 @@ decimal_status_t dec128_rescale(decimal128_t v, int32_t original_scale,
 }
 
 decimal128_t dec128_increase_scale_by(decimal128_t v, int32_t increase_by) {
-  // DCHECK_GE(increase_by 0);
-  // DCHECK_LE(increase_by 38);
+  DCHECK_GE(increase_by, 0);
+  DCHECK_LE(increase_by, 38);
 
   return dec128_multiply(v, kDecimal128PowersOfTen[increase_by]);
 }
 
 decimal128_t dec128_reduce_scale_by(decimal128_t v, int32_t reduce_by,
                                     bool round) {
-  // DCHECK_GE(reduce_by, 0);
-  // DCHECK_LLE(reduce_by, 38);
+  DCHECK_GE(reduce_by, 0);
+  DCHECK_LE(reduce_by, 38);
 
   if (reduce_by == 0) {
     return v;
@@ -583,7 +584,7 @@ decimal128_t dec128_reduce_scale_by(decimal128_t v, int32_t reduce_by,
   decimal128_t result;
   decimal128_t remainder;
   decimal_status_t s = dec128_divide(v, divisor, &result, &remainder);
-  // DCHECK(s, DEC128_STATUS_SUCCESS);
+  DCHECK(s == DEC128_STATUS_SUCCESS);
   if (round) {
     if (dec128_cmpge(dec128_abs(remainder),
                      kDecimal128HalfPowersOfTen[reduce_by])) {
