@@ -256,7 +256,7 @@ static decimal_status_t FromPositiveReal_float(float real, int32_t precision,
   FROM_POSITIVE_REAL(float);
 }
 
-static decimal_status_t FromPositiveReal_double(float real, int32_t precision,
+static decimal_status_t FromPositiveReal_double(double real, int32_t precision,
                                                 int32_t scale,
                                                 decimal128_t *out) {
   FROM_POSITIVE_REAL(double);
@@ -283,7 +283,7 @@ static decimal_status_t FromPositiveReal_double(float real, int32_t precision,
       *out = dec128_negate(*out);                                              \
       return DEC128_STATUS_SUCCESS;                                            \
     } else {                                                                   \
-      return FromPositiveReal_##REAL(-x, precision, scale, out);               \
+      return FromPositiveReal_##REAL(x, precision, scale, out);                \
     }                                                                          \
   }
 
