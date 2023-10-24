@@ -1,9 +1,300 @@
 #include "basic_decimal.h"
 #include "bit_util.h"
 #include "decimal_internal.h"
+#include "logging.h"
 #include "value_parsing.h"
 #include <assert.h>
 #include <math.h>
+
+/* Real conversion */
+
+#define POWER_OF_TEN(T, EXP)                                                   \
+  {                                                                            \
+    const int N = kPrecomputedPowersOfTen;                                     \
+    DCHECK(EXP >= -N && exp <= N);                                             \
+    return powers_of_ten_##T()[EXP + N];                                       \
+  }
+
+#define LARGE_POWER_OF_TEN(T, EXP)                                             \
+  {                                                                            \
+    const int N = kPrecomputedPowersOfTen;                                     \
+    if (ARROW_PREDICT_TRUE(EXP >= -N && exp <= N)) {                           \
+      return powers_of_ten_##T()[EXP + N];                                     \
+    } else {                                                                   \
+      return pow((T)(10), (T)(EXP));                                           \
+    }                                                                          \
+  }
+
+// Return 10**exp, with a fast lookup, assuming `exp` is within bounds
+static float PowerOfTen_float(int32_t exp) { POWER_OF_TEN(float, exp); }
+
+static double PowerOfTen_double(int32_t exp) { POWER_OF_TEN(double, exp); }
+
+// Return 10**exp, with a fast lookup if possible
+static float LargePowerOfTen_float(int32_t exp) {
+  LARGE_POWER_OF_TEN(float, exp);
+}
+
+static double LargePowerOfTen_double(int32_t exp) {
+  LARGE_POWER_OF_TEN(double, exp);
+}
+
+static decimal128_t DecimalPowerOfTen(int exp) {
+  DCHECK(exp >= 0 && exp <= trait_dec128.kMaxPrecision);
+  return powers_of_ten_dec128()[exp];
+}
+
+// Right shift positive `x` by positive `bits`, rounded half to even
+static decimal128_t RoundedRightShift(decimal128_t x, int bits) {
+  if (bits == 0) {
+    return x;
+  }
+  int64_t result_hi = dec128_high_bits(x);
+  uint64_t result_lo = dec128_low_bits(x);
+  uint64_t shifted = 0;
+  while (bits >= 64) {
+    // Retain the information that set bits were shifted right.
+    // This is important to detect an exact half.
+    shifted = result_lo | (shifted > 0);
+    result_lo = result_hi;
+    result_hi >>= 63; // for sign
+    bits -= 64;
+  }
+  if (bits > 0) {
+    shifted = (result_lo << (64 - bits)) | (shifted > 0);
+    result_lo >>= bits;
+    result_lo |= (uint64_t)(result_hi) << (64 - bits);
+    result_hi >>= bits;
+  }
+  // We almost have our result, but now do the rounding.
+  const uint64_t kHalf = 0x8000000000000000ULL;
+  if (shifted > kHalf) {
+    // Strictly more than half => round up
+    result_lo += 1;
+    result_hi += (result_lo == 0);
+  } else if (shifted == kHalf) {
+    // Exactly half => round to even
+    if ((result_lo & 1) != 0) {
+      result_lo += 1;
+      result_hi += (result_lo == 0);
+    }
+  } else {
+    // Strictly less than half => round down
+  }
+  return dec128_from_hilo(result_hi, result_lo);
+}
+
+#define FROM_POSITIVE_REAL_APPROX(REAL)                                        \
+  {                                                                            \
+    /* Approximate algorithm that operates in the FP domain (thus subject      \
+     * to precision loss).                                                     \
+     */                                                                        \
+    const double x = rint(real * PowerOfTen_##REAL(scale));                    \
+    const REAL max_abs = PowerOfTen_##REAL(precision);                         \
+    if (x <= -max_abs || x >= max_abs) {                                       \
+      return DEC128_STATUS_OVERFLOW;                                           \
+    }                                                                          \
+    /* Extract high and low bits */                                            \
+    const double high = floor(ldexp(x, -64));                                  \
+    const double low = x - ldexp(high, 64);                                    \
+                                                                               \
+    DCHECK_GE(high, 0);                                                        \
+    DCHECK_LT(high, 9.223372036854776e+18); /* 2**63 */                        \
+    DCHECK_GE(low, 0);                                                         \
+    DCHECK_LT(low, 1.8446744073709552e+19); /* 2**64 */                        \
+    *out = dec128_from_hilo((int64_t)(high), (uint64_t)(low));                 \
+    return DEC128_STATUS_SUCCESS;                                              \
+  }
+
+static decimal_status_t FromPositiveRealApprox_float(float real,
+                                                     int32_t precision,
+                                                     int32_t scale,
+                                                     decimal128_t *out) {
+  FROM_POSITIVE_REAL_APPROX(float);
+}
+
+static decimal_status_t FromPositiveRealApprox_double(double real,
+                                                      int32_t precision,
+                                                      int32_t scale,
+                                                      decimal128_t *out) {
+  FROM_POSITIVE_REAL_APPROX(double);
+}
+
+#define FROM_POSITIVE_REAL(REAL)                                               \
+  {                                                                            \
+    const int kMantissaBits = trait_##REAL.kMantissaBits;                      \
+    const int kMantissaDigits = trait_##REAL.kMantissaDigits;                  \
+    const int kMaxPrecision = DEC128_MAX_PRECISION;                            \
+                                                                               \
+    /* Problem statement: construct the Decimal with the value                 \
+     closest to `real * 10^scale`. */                                          \
+    if (scale < 0) {                                                           \
+      /* Negative scales are not handled below, fall back to approx algorithm  \
+       */                                                                      \
+      return FromPositiveRealApprox_##REAL(real, precision, scale, out);       \
+    }                                                                          \
+                                                                               \
+    /* 1. Check that `real` is within acceptable bounds. */                    \
+    const REAL limit = PowerOfTen_##REAL(precision - scale);                   \
+    if (real > limit) {                                                        \
+      /* Checking the limit early helps ensure the computations below do not   \
+       * overflow.                                                             \
+       * NOTE: `limit` is allowed here as rounding can make it smaller than    \
+       * the theoretical limit (for example, 1.0e23 < 10^23).                  \
+       */                                                                      \
+      return DEC128_STATUS_OVERFLOW;                                           \
+    }                                                                          \
+                                                                               \
+    /* 2. Losslessly convert `real` to `mant * 2**k` */                        \
+    int binary_exp = 0;                                                        \
+    const REAL real_mant = frexp(real, &binary_exp);                           \
+    /* `real_mant` is within 0.5 and 1 and has M bits of precision.            \
+     * Multiply it by 2^M to get an exact integer.                             \
+     */                                                                        \
+    const uint64_t mant = (uint64_t)(ldexp(real_mant, kMantissaBits));         \
+    const int k = binary_exp - kMantissaBits;                                  \
+    /* (note that `real = mant * 2^k`) */                                      \
+                                                                               \
+    /* 3. Start with `mant`.                                                   \
+     * We want to end up with `real * 10^scale` i.e. `mant * 2^k * 10^scale`.  \
+     */                                                                        \
+    decimal128_t x = dec128_from_int64(mant);                                  \
+                                                                               \
+    if (k < 0) {                                                               \
+      /* k < 0 (i.e. binary_exp < kMantissaBits), is probably the common case  \
+       * when converting to decimal. It implies right-shifting by -k bits,     \
+       * while multiplying by 10^scale. We also must avoid overflow (losing    \
+       * bits on the left) and precision loss (losing bits on the right).      \
+       */                                                                      \
+      int right_shift_by = -k;                                                 \
+      int mul_by_ten_to = scale;                                               \
+                                                                               \
+      /* At this point, `x` has kMantissaDigits significant digits but it can  \
+       * fit kMaxPrecision (excluding sign). We can therefore multiply by up   \
+       * to 10^(kMaxPrecision - kMantissaDigits).                              \
+       */                                                                      \
+      const int kSafeMulByTenTo = kMaxPrecision - kMantissaDigits;             \
+                                                                               \
+      if (mul_by_ten_to <= kSafeMulByTenTo) {                                  \
+        /* Scale is small enough, so we can do it all at once. */              \
+        x = dec128_multiply(x, DecimalPowerOfTen(mul_by_ten_to));              \
+        x = RoundedRightShift(x, right_shift_by);                              \
+      } else {                                                                 \
+        /* Scale is too large, we cannot multiply at once without overflow.    \
+         * We use an iterative algorithm which alternately shifts left by      \
+         * multiplying by a power of ten, and shifts right by a number of      \
+         * bits.                                                               \
+         */                                                                    \
+                                                                               \
+        /* First multiply `x` by as large a power of ten as possible           \
+         * without overflowing.                                                \
+         */                                                                    \
+        x = dec128_multiply(x, DecimalPowerOfTen(kSafeMulByTenTo));            \
+        mul_by_ten_to -= kSafeMulByTenTo;                                      \
+                                                                               \
+        /* `x` now has full precision. However, we know we'll only             \
+         * keep `precision` digits at the end. Extraneous bits/digits          \
+         * on the right can be safely shifted away, before multiplying         \
+         * again.                                                              \
+         * NOTE: if `precision` is the full precision then the algorithm will  \
+         * lose the last digit. If `precision` is almost the full precision,   \
+         * there can be an off-by-one error due to rounding.                   \
+         */                                                                    \
+        const int mul_step = MAX(1, kMaxPrecision - precision);                \
+                                                                               \
+        /* The running exponent, useful to compute by how much we must         \
+         * shift right to make place on the left before the next multiply.     \
+         */                                                                    \
+        int total_exp = 0;                                                     \
+        int total_shift = 0;                                                   \
+        while (mul_by_ten_to > 0 && right_shift_by > 0) {                      \
+          const int exp = MIN(mul_by_ten_to, mul_step);                        \
+          total_exp += exp;                                                    \
+          /* The supplementary right shift required so that                    \
+           * `x * 10^total_exp / 2^total_shift` fits in the decimal.           \
+           */                                                                  \
+          DCHECK_LT((size_t)(total_exp), sizeof(kCeilLog2PowersOfTen));        \
+          const int bits = MIN(right_shift_by,                                 \
+                               kCeilLog2PowersOfTen[total_exp] - total_shift); \
+          total_shift += bits;                                                 \
+          /* Right shift to make place on the left, then multiply */           \
+          x = RoundedRightShift(x, bits);                                      \
+          right_shift_by -= bits;                                              \
+          /* Should not overflow thanks to the precautions taken */            \
+          x = dec128_multiply(x, DecimalPowerOfTen(exp));                      \
+          mul_by_ten_to -= exp;                                                \
+        }                                                                      \
+        if (mul_by_ten_to > 0) {                                               \
+          x = dec128_multiply(x, DecimalPowerOfTen(mul_by_ten_to));            \
+        }                                                                      \
+        if (right_shift_by > 0) {                                              \
+          x = RoundedRightShift(x, right_shift_by);                            \
+        }                                                                      \
+      }                                                                        \
+    } else {                                                                   \
+      /* k >= 0 implies left-shifting by k bits and multiplying by 10^scale.   \
+       * The order of these operations therefore doesn't matter. We know       \
+       * we won't overflow because of the limit check above, and we also       \
+       * won't lose any significant bits on the right.                         \
+       */                                                                      \
+      x = dec128_multiply(x, DecimalPowerOfTen(scale));                        \
+      x = dec128_bitwise_shift_left(x, k);                                     \
+    }                                                                          \
+                                                                               \
+    /* Rounding might have pushed `x` just above the max precision, check      \
+     * again */                                                                \
+    if (!dec128_fits_in_precision(x, precision)) {                             \
+      return DEC128_STATUS_OVERFLOW;                                           \
+    }                                                                          \
+    *out = x;                                                                  \
+    return DEC128_STATUS_SUCCESS;                                              \
+  }
+
+static decimal_status_t FromPositiveReal_float(float real, int32_t precision,
+                                               int32_t scale,
+                                               decimal128_t *out) {
+  FROM_POSITIVE_REAL(float);
+}
+
+static decimal_status_t FromPositiveReal_double(float real, int32_t precision,
+                                                int32_t scale,
+                                                decimal128_t *out) {
+  FROM_POSITIVE_REAL(double);
+}
+
+#define FROM_REAL(REAL)                                                        \
+  {                                                                            \
+    DCHECK_GT(precision, 0);                                                   \
+    DCHECK_LE(precision, trait_dec128.kMaxPrecision);                          \
+    DCHECK_GE(scale, -trait_dec128.kMaxScale);                                 \
+    DCHECK_LE(scale, trait_dec128.kMaxScale);                                  \
+                                                                               \
+    if (isfinite(x)) {                                                         \
+      return DEC128_STATUS_ERROR;                                              \
+    }                                                                          \
+    if (x == 0) {                                                              \
+      *out = dec128_from_int64(0);                                             \
+    }                                                                          \
+    if (x < 0) {                                                               \
+      decimal_status_t s = FromPositiveReal_##REAL(-x, precision, scale, out); \
+      if (s != DEC128_STATUS_SUCCESS) {                                        \
+        return s;                                                              \
+      }                                                                        \
+      *out = dec128_negate(*out);                                              \
+      return DEC128_STATUS_SUCCESS;                                            \
+    } else {                                                                   \
+      return FromPositiveReal_##REAL(-x, precision, scale, out);               \
+    }                                                                          \
+  }
+
+decimal_status_t dec128_from_float(float x, decimal128_t *out,
+                                   int32_t precision, int32_t scale) {
+  FROM_REAL(float);
+}
+decimal_status_t dec128_from_double(double x, decimal128_t *out,
+                                    int32_t precision, int32_t scale) {
+  FROM_REAL(double);
+}
 
 typedef struct decimal_components_t {
   char whole_digits[DEC128_MAX_STRLEN];

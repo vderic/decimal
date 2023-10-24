@@ -262,4 +262,75 @@ static const int kCeilLog2PowersOfTen[76 + 1] = {
     173, 177, 180, 183, 187, 190, 193, 196, 200, 203, 206, 210, 213,
     216, 220, 223, 226, 230, 233, 236, 240, 243, 246, 250, 253};
 
+typedef struct RealTrait {
+  int kMantissaBits;
+  int kMantissaDigits;
+  uint64_t kMaxPreciseInteger;
+} RealTrait;
+
+/*
+template <>
+struct RealTraits<float> {
+  static constexpr const float* powers_of_ten() { return kFloatPowersOfTen; }
+
+  static constexpr float two_to_64(float x) { return x * 1.8446744e+19f; }
+  static constexpr float two_to_128(float x) { return x == 0 ? 0 : kFloatInf; }
+  static constexpr float two_to_192(float x) { return x == 0 ? 0 : kFloatInf; }
+
+  static constexpr int kMantissaBits = 24;
+  // ceil(log10(2 ^ kMantissaBits))
+  static constexpr int kMantissaDigits = 8;
+  // Integers between zero and kMaxPreciseInteger can be precisely represented
+  static constexpr uint64_t kMaxPreciseInteger = (1ULL << kMantissaBits) - 1;
+};
+*/
+static const RealTrait trait_float = {24, 8, (1ULL << 24) - 1};
+
+static inline const float *powers_of_ten_float() { return kFloatPowersOfTen; }
+static inline float two_to_64_float(float x) { return x * 1.8446744e+19f; }
+static inline float two_to_128_float(float x) { return x == 0 ? 0 : kFloatInf; }
+static inline float two_to_192_float(float x) { return x == 0 ? 0 : kFloatInf; }
+/*
+template <>
+struct RealTraits<double> {
+  static constexpr const double* powers_of_ten() { return kDoublePowersOfTen; }
+
+  static constexpr double two_to_64(double x) { return x
+* 1.8446744073709552e+19; } static constexpr double two_to_128(double x) {
+return x * 3.402823669209385e+38; } static constexpr double two_to_192(double x)
+{ return x * 6.277101735386681e+57; }
+
+  static constexpr int kMantissaBits = 53;
+  // ceil(log10(2 ^ kMantissaBits))
+  static constexpr int kMantissaDigits = 16;
+  // Integers between zero and kMaxPreciseInteger can be precisely represented
+  static constexpr uint64_t kMaxPreciseInteger = (1ULL << kMantissaBits) - 1;
+};
+*/
+static const RealTrait trait_double = {53, 16, (1ULL << 53) - 1};
+static inline const double *powers_of_ten_double() {
+  return kDoublePowersOfTen;
+}
+
+static inline double two_to_64_double(double x) {
+  return x * 1.8446744073709552e+19;
+}
+static inline double two_to_128_double(double x) {
+  return x * 3.402823669209385e+38;
+}
+static inline double two_to_192_double(double x) {
+  return x * 6.277101735386681e+57;
+}
+
+typedef struct DecimalTrait {
+  int kMaxPrecision;
+  int kMaxScale;
+} DecimalTrait;
+
+static const DecimalTrait trait_dec128 = {DEC128_MAX_PRECISION,
+                                          DEC128_MAX_SCALE};
+static inline decimal128_t *powers_of_ten_dec128() {
+  return kDecimal128PowersOfTen;
+}
+
 #endif
