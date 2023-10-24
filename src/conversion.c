@@ -269,7 +269,7 @@ static decimal_status_t FromPositiveReal_double(float real, int32_t precision,
     DCHECK_GE(scale, -trait_dec128.kMaxScale);                                 \
     DCHECK_LE(scale, trait_dec128.kMaxScale);                                  \
                                                                                \
-    if (isfinite(x)) {                                                         \
+    if (!isfinite(x)) {                                                        \
       return DEC128_STATUS_ERROR;                                              \
     }                                                                          \
     if (x == 0) {                                                              \

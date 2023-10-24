@@ -112,11 +112,32 @@ int main() {
   printf("dec128_to_string %s\n", output);
 
   int precision, scale;
-  decimal128_t fromstr;
-  s = dec128_from_string("-12345678901234.9876543", &fromstr, &precision,
-                         &scale);
+  decimal128_t from;
+  s = dec128_from_string("-12345678901234.9876543", &from, &precision, &scale);
 
-  dec128_print(stdout, fromstr, precision, scale);
+  dec128_print(stdout, from, precision, scale);
+
+  printf("from float\n");
+  float f = 123.456;
+  precision = 10;
+  scale = 4;
+  s = dec128_from_float(f, &from, precision, scale);
+  if (s != DEC128_STATUS_SUCCESS) {
+    fprintf(stderr, "from float error\n");
+    return 1;
+  }
+  dec128_print(stdout, from, precision, scale);
+
+  printf("from double\n");
+  double d = 12345678.456789;
+  precision = 16;
+  scale = 6;
+  s = dec128_from_double(d, &from, precision, scale);
+  if (s != DEC128_STATUS_SUCCESS) {
+    fprintf(stderr, "from double error\n");
+    return 1;
+  }
+  dec128_print(stdout, from, precision, scale);
 
   return 0;
 }
