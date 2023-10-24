@@ -69,8 +69,8 @@ void dec128_MOD_precision_scale(int p1, int s1, int p2, int s2, int *precision,
 
 // ret_precision and ret_scale must be calculated by dec_DIV_precison_scale
 // A and B must be normalized with same scale
-decimal128_t dec128_divide_floating(decimal128_t A, decimal128_t B,
-                                    int ret_precision, int ret_scale) {
+decimal128_t dec128_divide_exact(decimal128_t A, decimal128_t B,
+                                 int ret_precision, int ret_scale) {
 
   decimal128_t ret, result, remainder0;
 
