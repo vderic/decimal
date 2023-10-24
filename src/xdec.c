@@ -127,6 +127,8 @@ int main() {
     return 1;
   }
   dec128_print(stdout, from, precision, scale);
+  float f2 = dec128_to_float(from, scale);
+  printf("%f %f\n", f, f2);
 
   printf("from double\n");
   double d = 12345678.456789;
@@ -138,6 +140,9 @@ int main() {
     return 1;
   }
   dec128_print(stdout, from, precision, scale);
+
+  double d2 = dec128_to_double(from, scale);
+  printf("%f %f\n", d, d2);
 
   return 0;
 }

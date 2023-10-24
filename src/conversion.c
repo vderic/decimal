@@ -308,7 +308,7 @@ static float ToRealPositiveNoSplit_float(decimal128_t decimal, int32_t scale) {
   TO_REAL_POSITIVE_NO_SPLIT(float);
 }
 
-static float ToRealPositiveNoSplit_double(decimal128_t decimal, int32_t scale) {
+static double ToRealPositiveNoSplit_double(decimal128_t decimal, int32_t scale) {
   TO_REAL_POSITIVE_NO_SPLIT(double);
 }
 
