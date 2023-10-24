@@ -17,6 +17,11 @@ int main() {
   } else {
     printf("FAILED\n");
   }
+  dec128_print(stdout, d1, 38, 0);
+  dec128_print(stdout, d2, 38, 0);
+
+  decimal128_t d3 = d1 + d2;
+  dec128_print(stdout, d3, 38, 0);
 
   return 0;
 }
