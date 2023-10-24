@@ -3,6 +3,12 @@
 #include "basic_decimal.h"
 #include <stdexcept>
 
+inline decimal_status_t dec128_from_string(const std::string &value,
+                                           decimal128_t *out, int *precision,
+                                           int *scale) {
+  return dec128_from_string(value.c_str(), out, precision, scale);
+}
+
 inline bool operator==(const decimal128_t &left, const decimal128_t &right) {
   return dec128_cmpeq(left, right);
 }

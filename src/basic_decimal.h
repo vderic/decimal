@@ -191,6 +191,32 @@ bool dec128_fits_in_precision(decimal128_t v, int32_t precision);
 
 int32_t dec128_count_leading_binary_zeros(decimal128_t v);
 
+/* additional to the original arrow library */
+void dec128_ADD_SUB_precision_scale(int p1, int s1, int p2, int s2,
+                                    int *precision, int *scale);
+
+void dec128_MUL_precision_scale(int p1, int s1, int p2, int s2, int *precision,
+                                int *scale);
+
+void dec128_DIV_precision_scale(int p1, int s1, int p2, int s2, int *precision,
+                                int *scale);
+
+void dec128_MOD_precision_scale(int p1, int s1, int p2, int s2, int *precision,
+                                int *scale);
+
+// ret_precision and ret_scale must be calculated by dec_DIV_precison_scale
+// A and B must be normalized with same scale
+decimal128_t dec128_divide_floating(decimal128_t A, decimal128_t B,
+                                    int ret_precision, int ret_scale);
+
+decimal128_t dec128_floor(decimal128_t A, int scale);
+
+decimal128_t dec128_ceil(decimal128_t A, int scale);
+
+decimal128_t dec128_mod(decimal128_t A, int Ascale, decimal128_t B, int Bscale);
+
+decimal128_t dec128_round(decimal128_t A, int32_t Ascale, int32_t rscale);
+
 DEC128_EXTERN_END
 
 #endif

@@ -16,7 +16,7 @@ CFLAGS += -std=c99
 CXXFLAGS += $(filter-out -std=c99, $(CFLAGS))  -std=c++17 -static-libstdc++
 LDLIBS = -lpthread -ldl -lm
 
-CFILES = basic_decimal.c conversion.c
+CFILES = basic_decimal.c conversion.c util.c
 
 OBJS = $(CFILES:.c=.o)
 EXECS = xdec xdec2

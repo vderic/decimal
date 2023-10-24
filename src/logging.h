@@ -3,6 +3,7 @@
 
 #define ARROW_IGNORE_EXPR(expr) ((void)(expr))
 
+#define CHECKX(condition, msg) ARROW_IGNORE_EXPR(condition)
 #define DCHECK(condition) ARROW_IGNORE_EXPR(condition)
 #define DCHECK_OK(status) ARROW_IGNORE_EXPR(status)
 #define DCHECK_EQ(val1, val2) ARROW_IGNORE_EXPR(val1)
