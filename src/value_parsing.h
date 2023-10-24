@@ -2,6 +2,7 @@
 #define VALUE_PARSING_H_
 
 #include "macros.h"
+#include <limits.h>
 #include <stdint.h>
 
 // NOTE: HalfFloatType would require a half<->float conversion library
@@ -22,15 +23,12 @@ static inline uint8_t ParseDecimalDigit(char c) { return (uint8_t)(c - '0'); }
     break;                                                                     \
   }
 
-#define PARSE_UNSIGNED_ITERATION_LAST(C_TYPE)                                  \
+#define PARSE_UNSIGNED_ITERATION_LAST(C_TYPE, MAX_VALUE)                       \
   if (length > 0) {                                                            \
-    /*                                                                         \
-      if (ARROW_PREDICT_FALSE(result >                                         \
-                              std::numeric_limits<C_TYPE>::max() / 10U)) {     \
-        // Overflow                                                            \
-        return false;                                                          \
-      }                                                                        \
-    */                                                                         \
+    if (ARROW_PREDICT_FALSE(result > MAX_VALUE / 10U)) {                       \
+      /* Overflow */                                                           \
+      return false;                                                            \
+    }                                                                          \
     uint8_t digit = ParseDecimalDigit(*s++);                                   \
     result = (C_TYPE)(result * 10U);                                           \
     C_TYPE new_result = (C_TYPE)(result + digit);                              \
@@ -55,7 +53,7 @@ static inline bool ParseUInt8(const char *s, size_t length, uint8_t *out) {
   do {
     PARSE_UNSIGNED_ITERATION(uint8_t);
     PARSE_UNSIGNED_ITERATION(uint8_t);
-    PARSE_UNSIGNED_ITERATION_LAST(uint8_t);
+    PARSE_UNSIGNED_ITERATION_LAST(uint8_t, UCHAR_MAX);
   } while (false);
   *out = result;
   return true;
@@ -68,7 +66,7 @@ static inline bool ParseUInt16(const char *s, size_t length, uint16_t *out) {
     PARSE_UNSIGNED_ITERATION(uint16_t);
     PARSE_UNSIGNED_ITERATION(uint16_t);
     PARSE_UNSIGNED_ITERATION(uint16_t);
-    PARSE_UNSIGNED_ITERATION_LAST(uint16_t);
+    PARSE_UNSIGNED_ITERATION_LAST(uint16_t, USHRT_MAX);
   } while (false);
   *out = result;
   return true;
@@ -88,7 +86,7 @@ static inline bool ParseUInt32(const char *s, size_t length, uint32_t *out) {
     PARSE_UNSIGNED_ITERATION(uint32_t);
     PARSE_UNSIGNED_ITERATION(uint32_t);
 
-    PARSE_UNSIGNED_ITERATION_LAST(uint32_t);
+    PARSE_UNSIGNED_ITERATION_LAST(uint32_t, UINT_MAX);
   } while (false);
   *out = result;
   return true;
@@ -120,7 +118,7 @@ static inline bool ParseUInt64(const char *s, size_t length, uint64_t *out) {
     PARSE_UNSIGNED_ITERATION(uint64_t);
     PARSE_UNSIGNED_ITERATION(uint64_t);
 
-    PARSE_UNSIGNED_ITERATION_LAST(uint64_t);
+    PARSE_UNSIGNED_ITERATION_LAST(uint64_t, ULLONG_MAX);
   } while (false);
   *out = result;
   return true;
