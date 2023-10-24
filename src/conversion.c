@@ -71,11 +71,7 @@ static bool ParseDecimalComponents(const char *s, decimal_components_t *out) {
       ++pos;
     }
     out->has_exponent = true;
-
-    char exp[size - pos + 1];
-    strncpy(exp, s + pos, size - pos);
-    out->exponent = atoi(exp);
-    return true;
+    return StringToInt32(s + pos, size - pos, &(out->exponent));
   }
   return pos == size;
 }
@@ -101,7 +97,7 @@ static inline void ShiftAndAdd(const char *input, uint64_t out[],
     const uint64_t multiple = kUInt64PowersOfTen[group_size];
     uint64_t chunk = 0;
 
-    if (!ParseUInt64(input + posn, group_size, &chunk)) {
+    if (!StringToUInt64(input + posn, group_size, &chunk)) {
       // error here
       fprintf(stderr, "parse uint64 error");
       return;
