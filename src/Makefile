@@ -13,7 +13,7 @@ ifdef PROFILE
 endif
 
 CFLAGS += -std=c99
-LDLIBS = -lpthread -ldl
+LDLIBS = -lpthread -ldl -lm
 
 CFILES = basic_decimal.c conversion.c
 

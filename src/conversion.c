@@ -296,6 +296,83 @@ decimal_status_t dec128_from_double(double x, decimal128_t *out,
   FROM_REAL(double);
 }
 
+#define TO_REAL_POSITIVE_NO_SPLIT(REAL)                                        \
+  {                                                                            \
+    REAL x = two_to_64_##REAL((REAL)(dec128_high_bits(decimal)));              \
+    x += (REAL)(dec128_low_bits(decimal));                                     \
+    x *= LargePowerOfTen_##REAL(-scale);                                       \
+    return x;                                                                  \
+  }
+
+static float ToRealPositiveNoSplit_float(decimal128_t decimal, int32_t scale) {
+  TO_REAL_POSITIVE_NO_SPLIT(float);
+}
+
+static float ToRealPositiveNoSplit_double(decimal128_t decimal, int32_t scale) {
+  TO_REAL_POSITIVE_NO_SPLIT(double);
+}
+
+/// An appoximate conversion from Decimal128 to Real that guarantees:
+/// 1. If the decimal is an integer, the conversion is exact.
+/// 2. If the number of fractional digits is <=
+/// RealTraits<Real>::kMantissaDigits (e.g.
+///    8 for float and 16 for double), the conversion is within 1 ULP of the
+///    exact value.
+/// 3. Otherwise, the conversion is within
+/// 2^(-RealTraits<Real>::kMantissaDigits+1)
+///    (e.g. 2^-23 for float and 2^-52 for double) of the exact value.
+/// Here "exact value" means the closest representable value by Real.
+#define TO_REAL_POSITIVE(REAL)                                                 \
+  {                                                                            \
+    if (scale <= 0 ||                                                          \
+        (dec128_high_bits(decimal) == 0 &&                                     \
+         dec128_low_bits(decimal) <= trait_##REAL.kMaxPreciseInteger)) {       \
+      /* No need to split the decimal if it is already an integer (scale <= 0) \
+       * or if it can be precisely represented by Real                         \
+       */                                                                      \
+      return ToRealPositiveNoSplit_##REAL(decimal, scale);                     \
+    }                                                                          \
+                                                                               \
+    /* Split decimal into whole and fractional parts to avoid precision loss   \
+     */                                                                        \
+    decimal128_t whole_decimal, fraction_decimal;                              \
+    dec128_get_whole_and_fraction(decimal, scale, &whole_decimal,              \
+                                  &fraction_decimal);                          \
+                                                                               \
+    REAL whole = ToRealPositiveNoSplit_##REAL(whole_decimal, 0);               \
+    REAL fraction = ToRealPositiveNoSplit_##REAL(fraction_decimal, scale);     \
+                                                                               \
+    return whole + fraction;                                                   \
+  }
+
+static float ToRealPositive_float(decimal128_t decimal, int32_t scale) {
+  TO_REAL_POSITIVE(float);
+}
+
+static double ToRealPositive_double(decimal128_t decimal, int32_t scale) {
+  TO_REAL_POSITIVE(double);
+}
+
+#define TO_REAL(REAL)                                                          \
+  {                                                                            \
+    DCHECK_GE(scale, -trait_##REAL.kMaxScale);                                 \
+    DCHECK_LE(scale, trait_##REAL.kMaxScale);                                  \
+    if (dec128_is_negative(decimal)) {                                         \
+      /* Convert the absolute value to avoid precision loss */                 \
+      decimal128_t abs = dec128_negate(decimal);                               \
+      return -ToRealPositive_##REAL(abs, scale);                               \
+    } else {                                                                   \
+      return ToRealPositive_##REAL(decimal, scale);                            \
+    }                                                                          \
+  }
+
+float dec128_to_float(decimal128_t decimal, int32_t scale) { TO_REAL(float); }
+
+double dec128_to_double(decimal128_t decimal, int32_t scale) {
+  TO_REAL(double);
+}
+
+/* string conversion */
 typedef struct decimal_components_t {
   char whole_digits[DEC128_MAX_STRLEN];
   char fractional_digits[DEC128_MAX_STRLEN];
