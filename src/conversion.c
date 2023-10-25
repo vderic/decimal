@@ -2,6 +2,7 @@
 #include "bit_util.h"
 #include "decimal_internal.h"
 #include "logging.h"
+#include "macros.h"
 #include "value_parsing.h"
 #include <assert.h>
 #include <math.h>
@@ -757,7 +758,12 @@ decimal_status_t dec128_to_integer_string(decimal128_t v, char *out) {
   return DEC128_STATUS_SUCCESS;
 }
 
-decimal_status_t dec128_to_int64(decimal128_t v, int64_t *out);
+int64_t dec128_to_int64(decimal128_t v) {
+  CHECKX((dec128_high_bits(v) == 0 || dec128_high_bits(v) == -1),
+         "Try to get a decimal128 greater than the value range of a int64_t; "
+         "high bits() must be equal to 0 or -1.");
+  return (int64_t)dec128_low_bits(v);
+}
 
 void dec128_to_string(decimal128_t v, char *out, int32_t scale) {
   decimal_status_t s;
