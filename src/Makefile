@@ -19,7 +19,7 @@ LDLIBS = -lpthread -ldl -lm
 CFILES = basic_decimal.c conversion.c util.c
 
 OBJS = $(CFILES:.c=.o)
-EXECS = xdec xdec2
+EXECS =
 
 all: libdec128.a $(EXECS) 
 
