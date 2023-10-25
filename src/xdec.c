@@ -113,8 +113,12 @@ int main() {
 
   int precision, scale;
   decimal128_t from;
-  s = dec128_from_string("-12345678901234.9876543", &from, &precision, &scale);
+  s = dec128_from_string(0, &from, &precision, &scale);
+  if (s) {
+    fprintf(stderr, "OK. from_string error\n");
+  }
 
+  s = dec128_from_string("-12345678901234.9876543", &from, &precision, &scale);
   dec128_print(stdout, from, precision, scale);
 
   printf("from float\n");
