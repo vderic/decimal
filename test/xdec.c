@@ -177,5 +177,9 @@ int main() {
 
   dec128_print(stdout, div3, p3, s3);
 
+  printf("to_int64\n");
+  i64 = dec128_to_int64(div1);
+  printf("i64=%ld\n", i64);
+
   return 0;
 }
