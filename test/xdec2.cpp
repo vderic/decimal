@@ -39,5 +39,15 @@ int main() {
   Decimal128 d5 = d1 + d2;
   d5.print(38, 0);
 
+  int p1, p2, p3, s1, s2, s3;
+  Decimal128 dd1, dd2, dd3;
+  s = Decimal128::FromString("123456.24", &dd1, &p1, &s1);
+  s = Decimal128::FromString("3456.24", &dd2, &p2, &s2);
+
+  dec128_DIV_precision_scale(p1, s1, p2, s2, &p3, &s3);
+  dd3 = Decimal128::Divide(dd1, dd2, p3, s3);
+
+  dd3.print(p3, s3);
+
   return 0;
 }

@@ -70,6 +70,14 @@ struct Decimal128 {
     return Decimal128(dec128_reduce_scale_by(dec, reduce_by, round));
   }
 
+  /* dividend and divisor must be normalize to the same scale before pass to
+     thid function. the value of precision and scale is from
+     dec128_DIV_precision_scale() */
+  static Decimal128 Divide(Decimal128 &left, Decimal128 &right, int precision,
+                           int scale) {
+    return {dec128_divide_exact(left.dec, right.dec, precision, scale)};
+  }
+
   void print(int precision, int scale) {
     dec128_print(stdout, dec, precision, scale);
   }
