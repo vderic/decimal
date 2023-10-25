@@ -599,7 +599,7 @@ void dec128_print(FILE *fp, decimal128_t v, int precision, int scale) {
   fprintf(fp, "\n");
 }
 
-static void AppendLittleEndianArrayToString(const uint64_t *array, size_t n,
+static void AppendLittleEndianArrayToString(const uint64_t array[], size_t n,
                                             char *result) {
 
   size_t most_significant_elem_idx = n;
@@ -750,10 +750,10 @@ decimal_status_t dec128_to_integer_string(decimal128_t v, char *out) {
     p++;
     decimal128_t abs = dec128_negate(v);
     uint64_t array[] = {dec128_low_bits(abs), (uint64_t)dec128_high_bits(abs)};
-    AppendLittleEndianArrayToString((uint64_t *)array, 2, p);
+    AppendLittleEndianArrayToString(array, 2, p);
   } else {
     uint64_t array[] = {dec128_low_bits(v), (uint64_t)dec128_high_bits(v)};
-    AppendLittleEndianArrayToString((uint64_t *)array, 2, p);
+    AppendLittleEndianArrayToString(array, 2, p);
   }
   return DEC128_STATUS_SUCCESS;
 }
