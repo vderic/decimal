@@ -1,4 +1,4 @@
-#include "decimal.hpp"
+#include "decimal_wrapper.hpp"
 
 int main() {
 
