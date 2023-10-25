@@ -765,10 +765,6 @@ decimal_status_t dec128_to_integer_string(decimal128_t v, char *out) {
 
 decimal_status_t dec128_to_int64(decimal128_t v, int64_t *out);
 
-float dec128_to_float(decimal128_t v, int32_t scale);
-
-double dec128_to_double(decimal128_t v, int32_t scale);
-
 void dec128_to_string(decimal128_t v, char *out, int32_t scale) {
   decimal_status_t s;
   char intstr[DEC128_MAX_STRLEN];
