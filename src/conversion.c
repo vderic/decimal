@@ -356,8 +356,8 @@ static double ToRealPositive_double(decimal128_t decimal, int32_t scale) {
 
 #define TO_REAL(REAL)                                                          \
   {                                                                            \
-    DCHECK_GE(scale, -trait_##REAL.kMaxScale);                                 \
-    DCHECK_LE(scale, trait_##REAL.kMaxScale);                                  \
+    DCHECK_GE(scale, -trait_dec128.kMaxScale);                                 \
+    DCHECK_LE(scale, trait_dec128.kMaxScale);                                  \
     if (dec128_is_negative(decimal)) {                                         \
       /* Convert the absolute value to avoid precision loss */                 \
       decimal128_t abs = dec128_negate(decimal);                               \

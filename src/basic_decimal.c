@@ -217,7 +217,7 @@ bool dec128_fits_in_precision(decimal128_t v, int32_t precision) {
 }
 
 int32_t dec128_count_leading_binary_zeros(decimal128_t v) {
-  DCHECK_GE(v, kDecimal128Zero);
+  DCHECK(dec128_cmpge(v, kDecimal128Zero));
 
   if (dec128_high_bits(v) == 0) {
     return CountLeadingZeros(dec128_low_bits(v)) + 64;
@@ -528,7 +528,7 @@ static bool rescale_would_cause_data_loss(decimal128_t value,
                                           decimal128_t *result) {
 
   if (delta_scale < 0) {
-    DCHECK_NE(multiplier, 0);
+    DCHECK(dec128_cmpne(multiplier, kDecimal128Zero));
     decimal128_t remainder;
     decimal_status_t status =
         dec128_divide(value, multiplier, result, &remainder);
