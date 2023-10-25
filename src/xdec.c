@@ -152,11 +152,12 @@ int main() {
   decimal128_t div1, div2, div3;
   int p1, p2, p3, s1, s2, s3;
 
-  s = dec128_from_string("12345678.123", &div1, &p1, &s1);
+  // s = dec128_from_string("12345678.123", &div1, &p1, &s1);
+  s = dec128_from_string("0.123", &div1, &p1, &s1);
   if (s) {
     return 1;
   }
-  s = dec128_from_string("235", &div2, &p2, &s2);
+  s = dec128_from_string("235.579", &div2, &p2, &s2);
   if (s) {
     return 1;
   }

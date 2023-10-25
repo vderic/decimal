@@ -501,7 +501,7 @@ static decimal_status_t DecimalFromString(const char *s, decimal128_t *out,
   // Count number of significant digits (without leading zeros)
   size_t first_non_zero = find_first_not_of(dec.whole_digits, '0');
   size_t significant_digits = strlen(dec.fractional_digits);
-  if (first_non_zero != -1) {
+  if (first_non_zero != (size_t)-1) {
     significant_digits += strlen(dec.whole_digits) - first_non_zero;
   }
   int32_t parsed_precision = (int32_t)(significant_digits);
@@ -773,5 +773,6 @@ void dec128_to_string(decimal128_t v, char *out, int32_t scale) {
   decimal_status_t s;
   char intstr[DEC128_MAX_STRLEN];
   s = dec128_to_integer_string(v, intstr);
+  DCHECK_OK(s);
   AdjustIntegerStringWithScale(intstr, scale, out);
 }

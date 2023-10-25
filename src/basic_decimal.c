@@ -316,7 +316,7 @@ static inline void FixDivisionSigns(decimal128_t *result,
 
 // \brief Build a native endian array of uint64_t from a big endian array of
 // uint32_t.
-static decimal_status_t BuildFromArrayToInt64(uint64_t *result_array, int N,
+static decimal_status_t BuildFromArrayToInt64(uint64_t *result_array, size_t N,
                                               const uint32_t *array,
                                               int64_t length) {
   for (int64_t i = length - 2 * N - 1; i >= 0; i--) {

@@ -329,7 +329,7 @@ typedef struct DecimalTrait {
 
 static const DecimalTrait trait_dec128 = {DEC128_MAX_PRECISION,
                                           DEC128_MAX_SCALE};
-static inline decimal128_t *powers_of_ten_dec128() {
+static inline const decimal128_t *powers_of_ten_dec128() {
   return kDecimal128PowersOfTen;
 }
 
