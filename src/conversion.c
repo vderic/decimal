@@ -741,12 +741,6 @@ decimal_status_t dec128_from_string(const char *s, decimal128_t *out,
   return DecimalFromString(s, out, precision, scale);
 }
 
-decimal_status_t dec128_from_float(float real, decimal128_t *out,
-                                   int32_t precision, int32_t scale);
-
-decimal_status_t dec128_from_double(double real, decimal128_t *out,
-                                    int32_t precision, int32_t scale);
-
 /* output to various formats */
 decimal_status_t dec128_to_integer_string(decimal128_t v, char *out) {
   char *p = out;
