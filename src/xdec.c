@@ -148,5 +148,33 @@ int main() {
   double d2 = dec128_to_double(from, scale);
   printf("%f %f\n", d, d2);
 
+  printf("divide_exact\n");
+  decimal128_t div1, div2, div3;
+  int p1, p2, p3, s1, s2, s3;
+
+  s = dec128_from_string("12345678.123", &div1, &p1, &s1);
+  if (s) {
+    return 1;
+  }
+  s = dec128_from_string("235", &div2, &p2, &s2);
+  if (s) {
+    return 1;
+  }
+
+  dec128_DIV_precision_scale(p1, s1, p2, s2, &p3, &s3);
+  printf("p1 = %d, p2 = %d, p3 = %d, s1 = %d, s2= %d, s3 = %d\n", p1, p2, p3,
+         s1, s2, s3);
+
+  if (s1 > s2) {
+    // increase div2
+    div2 = dec128_increase_scale_by(div2, s1 - s2);
+  } else if (s2 > s1) {
+    div1 = dec128_increase_scale_by(div1, s2 - s1);
+  }
+
+  div3 = dec128_divide_exact(div1, div2, p3, s3);
+
+  dec128_print(stdout, div3, p3, s3);
+
   return 0;
 }
