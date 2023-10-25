@@ -44,8 +44,7 @@ int main() {
   s = Decimal128::FromString("123456.24", &dd1, &p1, &s1);
   s = Decimal128::FromString("3456.24", &dd2, &p2, &s2);
 
-  dec128_DIV_precision_scale(p1, s1, p2, s2, &p3, &s3);
-  dd3 = Decimal128::Divide(dd1, dd2, p3, s3);
+  dd3 = Decimal128::Divide(dd1, p1, s2, dd2, p2, s2, &p3, &s3);
 
   dd3.print(p3, s3);
 

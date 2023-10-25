@@ -70,12 +70,18 @@ struct Decimal128 {
     return Decimal128(dec128_reduce_scale_by(dec, reduce_by, round));
   }
 
-  /* dividend and divisor must be normalize to the same scale before pass to
-     thid function. the value of precision and scale is from
-     dec128_DIV_precision_scale() */
-  static Decimal128 Divide(Decimal128 &left, Decimal128 &right, int precision,
-                           int scale) {
-    return {dec128_divide_exact(left.dec, right.dec, precision, scale)};
+  static Decimal128 Divide(Decimal128 &left, int p1, int s1, Decimal128 &right,
+                           int p2, int s2, int *precision, int *scale) {
+    Decimal128 d1 = left;
+    Decimal128 d2 = right;
+    if (s1 > s2) {
+      d2 = d2.IncreaseScaleBy(s1 - s2);
+    } else if (s2 > s1) {
+      d1 = d1.IncreaseScaleBy(s2 - s1);
+    }
+
+    dec128_DIV_precision_scale(p1, s1, p2, s2, precision, scale);
+    return {dec128_divide_exact(d1.dec, d2.dec, *precision, *scale)};
   }
 
   void print(int precision, int scale) {
