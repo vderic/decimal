@@ -485,7 +485,7 @@ static inline void ShiftAndAdd(const char *input, uint64_t out[],
 
 static decimal_status_t DecimalFromString(const char *s, decimal128_t *out,
                                           int32_t *precision, int32_t *scale) {
-  if (*s == 0) {
+  if (!s || *s == 0) {
     // return Status::Invalid("Empty string cannot be converted to ",
     // type_name);
     return DEC128_STATUS_ERROR;
