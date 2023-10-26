@@ -166,14 +166,7 @@ int main() {
   printf("p1 = %d, p2 = %d, p3 = %d, s1 = %d, s2= %d, s3 = %d\n", p1, p2, p3,
          s1, s2, s3);
 
-  if (s1 > s2) {
-    // increase div2
-    div2 = dec128_increase_scale_by(div2, s1 - s2);
-  } else if (s2 > s1) {
-    div1 = dec128_increase_scale_by(div1, s2 - s1);
-  }
-
-  div3 = dec128_divide_exact(div1, div2, p3, s3);
+  div3 = dec128_divide_exact(div1, s1, div2, s2, p3, s3);
 
   dec128_print(stdout, div3, p3, s3);
 

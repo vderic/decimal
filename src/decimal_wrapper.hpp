@@ -94,15 +94,7 @@ struct Decimal128 {
 
   static Decimal128 Divide(Decimal128 &left, int s1, Decimal128 &right, int s2,
                            int precision, int scale) {
-    Decimal128 d1 = left;
-    Decimal128 d2 = right;
-    if (s1 > s2) {
-      d2 = d2.IncreaseScaleBy(s1 - s2);
-    } else if (s2 > s1) {
-      d1 = d1.IncreaseScaleBy(s2 - s1);
-    }
-
-    return {dec128_divide_exact(d1.dec, d2.dec, precision, scale)};
+    return {dec128_divide_exact(left.dec, s1, right.dec, s2, precision, scale)};
   }
 
   Decimal128 &Abs() {

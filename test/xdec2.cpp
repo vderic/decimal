@@ -49,7 +49,8 @@ int main() {
   dec128_DIV_precision_scale(p1, s1, p2, s2, &p3, &s3);
   dd3 = Decimal128::Divide(dd1, s1, dd2, s2, p3, s3);
 
-  std::cout << dd3.ToString(s3) << std::endl;
+  std::cout << dd1.ToString(s1) << " / " << dd2.ToString(s2) << " = "
+            << dd3.ToString(s3) << std::endl;
 
   dd3.Negate();
   std::cout << dd3.ToString(s3) << std::endl;
