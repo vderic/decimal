@@ -1,4 +1,5 @@
 #include "decimal_wrapper.hpp"
+#include <iostream>
 
 int main() {
 
@@ -44,9 +45,64 @@ int main() {
   s = Decimal128::FromString("123456.24", &dd1, &p1, &s1);
   s = Decimal128::FromString("3456.24", &dd2, &p2, &s2);
 
-  dd3 = Decimal128::Divide(dd1, p1, s2, dd2, p2, s2, &p3, &s3);
+  dec128_DIV_precision_scale(p1, s1, p2, s2, &p3, &s3);
+  dd3 = Decimal128::Divide(dd1, s1, dd2, s2, p3, s3);
 
   dd3.print(p3, s3);
+
+  dd3.Negate();
+  dd3.print(p3, s3);
+  dd3.Abs();
+  dd3.print(p3, s3);
+
+  std::string str = dd3.ToString(s3);
+  float fp32 = dd3.ToFloat(s3);
+  double fp64 = dd3.ToDouble(s3);
+  int64_t i64 = static_cast<int64_t>(dd3);
+  std::cout << str << ", " << std::to_string(fp32) << ", "
+            << std::to_string(fp64) << ", " << std::to_string(i64) << std::endl;
+
+  Decimal128 d6;
+
+  precision = 18;
+  scale = 6;
+  s = Decimal128::FromReal(fp32, &d6, precision, scale);
+  if (s) {
+    printf("FromReal error");
+  }
+  d6.print(precision, scale);
+
+  s = Decimal128::FromReal(fp64, &d6, precision, scale);
+  if (s) {
+    printf("FromReal error");
+  }
+  d6.print(precision, scale);
+
+  // floor
+  Decimal128 floor = Decimal128::Floor(d6, scale - 2);
+  floor.print(precision, scale);
+
+  // ceil
+  Decimal128 ceil = Decimal128::Floor(d6, scale - 4);
+  ceil.print(precision, scale);
+
+  // mod
+  p1 = precision;
+  s1 = scale;
+  Decimal128 d7;
+  Decimal128::FromString("12.3456", &d7, &p2, &s2);
+
+  dec128_MOD_precision_scale(p1, s1, p2, s2, &p3, &s3);
+
+  Decimal128 mod = Decimal128::Mod(d6, s1, d7, s2);
+
+  std::cout << d6.ToString(s1) << " % " << d7.ToString(s2) << " = "
+            << mod.ToString(s3) << std::endl;
+
+  // round
+  Decimal128 round = Decimal128::Round(mod, s3, s3 - 2);
+  std::cout << "round(" << mod.ToString(s3) << "," << std::to_string(s3 - 2)
+            << ")=" << round.ToString(s3) << std::endl;
 
   return 0;
 }

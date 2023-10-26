@@ -16,10 +16,32 @@ struct Decimal128 {
 
   Decimal128(const uint8_t *bytes) { dec = dec128_from_pointer(bytes); }
 
+  std::string ToString(int32_t scale) {
+    char ret[DEC128_MAX_STRLEN];
+    dec128_to_string(dec, ret, scale);
+    return std::string(ret);
+  }
+
+  float ToFloat(int32_t scale) { return dec128_to_float(dec, scale); }
+
+  double ToDouble(int32_t scale) { return dec128_to_double(dec, scale); }
+
   static decimal_status_t FromString(const char *s, Decimal128 *out,
                                      int32_t *precision, int32_t *scale) {
     return dec128_from_string(s, &out->dec, precision, scale);
   }
+
+  static decimal_status_t FromReal(double real, Decimal128 *out,
+                                   int32_t precision, int32_t scale) {
+    return dec128_from_double(real, &out->dec, precision, scale);
+  }
+
+  static decimal_status_t FromReal(float real, Decimal128 *out,
+                                   int32_t precision, int32_t scale) {
+    return dec128_from_float(real, &out->dec, precision, scale);
+  }
+
+  explicit operator int64_t() const { return dec128_to_int64(dec); }
 
   Decimal128 &operator+=(const Decimal128 &right) {
     dec = dec128_sum(dec, right.dec);
@@ -70,8 +92,8 @@ struct Decimal128 {
     return Decimal128(dec128_reduce_scale_by(dec, reduce_by, round));
   }
 
-  static Decimal128 Divide(Decimal128 &left, int p1, int s1, Decimal128 &right,
-                           int p2, int s2, int *precision, int *scale) {
+  static Decimal128 Divide(Decimal128 &left, int s1, Decimal128 &right, int s2,
+                           int precision, int scale) {
     Decimal128 d1 = left;
     Decimal128 d2 = right;
     if (s1 > s2) {
@@ -80,12 +102,43 @@ struct Decimal128 {
       d1 = d1.IncreaseScaleBy(s2 - s1);
     }
 
-    dec128_DIV_precision_scale(p1, s1, p2, s2, precision, scale);
-    return {dec128_divide_exact(d1.dec, d2.dec, *precision, *scale)};
+    return {dec128_divide_exact(d1.dec, d2.dec, precision, scale)};
   }
 
   void print(int precision, int scale) {
     dec128_print(stdout, dec, precision, scale);
+  }
+
+  Decimal128 &Abs() {
+    dec = dec128_abs(dec);
+    return *this;
+  }
+
+  static Decimal128 Abs(const Decimal128 &left) {
+    return {dec128_abs(left.dec)};
+  }
+
+  Decimal128 &Negate() {
+    dec = dec128_negate(dec);
+    return *this;
+  }
+
+  static Decimal128 Ceil(const Decimal128 &left, int32_t scale) {
+    return dec128_ceil(left.dec, scale);
+  }
+
+  static Decimal128 Floor(const Decimal128 &left, int32_t scale) {
+    return dec128_floor(left.dec, scale);
+  }
+
+  static Decimal128 Mod(const Decimal128 &left, int32_t left_scale,
+                        const Decimal128 &right, int right_scale) {
+    return dec128_mod(left.dec, left_scale, right.dec, right_scale);
+  }
+
+  static Decimal128 Round(const Decimal128 &left, int32_t scale,
+                          int32_t ret_scale) {
+    return dec128_round(left.dec, scale, ret_scale);
   }
 };
 
