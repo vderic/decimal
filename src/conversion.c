@@ -19,7 +19,7 @@
 #define LARGE_POWER_OF_TEN(T, EXP)                                             \
   {                                                                            \
     const int N = kPrecomputedPowersOfTen;                                     \
-    if (ARROW_PREDICT_TRUE(EXP >= -N && exp <= N)) {                           \
+    if (DEC128_PREDICT_TRUE(EXP >= -N && exp <= N)) {                          \
       return powers_of_ten_##T()[EXP + N];                                     \
     } else {                                                                   \
       return pow((T)(10), (T)(EXP));                                           \

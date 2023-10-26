@@ -18,16 +18,16 @@
   } while (0)
 
 #if 0
-#define ARROW_IGNORE_EXPR(expr) ((void)(expr))
+#define DEC128_IGNORE_EXPR(expr) ((void)(expr))
 
-#define DCHECK(condition) ARROW_IGNORE_EXPR(condition)
-#define DCHECK_OK(status) ARROW_IGNORE_EXPR(status)
-#define DCHECK_EQ(val1, val2) ARROW_IGNORE_EXPR(val1)
-#define DCHECK_NE(val1, val2) ARROW_IGNORE_EXPR(val1)
-#define DCHECK_LE(val1, val2) ARROW_IGNORE_EXPR(val1)
-#define DCHECK_LT(val1, val2) ARROW_IGNORE_EXPR(val1)
-#define DCHECK_GE(val1, val2) ARROW_IGNORE_EXPR(val1)
-#define DCHECK_GT(val1, val2) ARROW_IGNORE_EXPR(val1)
+#define DCHECK(condition) DEC128_IGNORE_EXPR(condition)
+#define DCHECK_OK(status) DEC128_IGNORE_EXPR(status)
+#define DCHECK_EQ(val1, val2) DEC128_IGNORE_EXPR(val1)
+#define DCHECK_NE(val1, val2) DEC128_IGNORE_EXPR(val1)
+#define DCHECK_LE(val1, val2) DEC128_IGNORE_EXPR(val1)
+#define DCHECK_LT(val1, val2) DEC128_IGNORE_EXPR(val1)
+#define DCHECK_GE(val1, val2) DEC128_IGNORE_EXPR(val1)
+#define DCHECK_GT(val1, val2) DEC128_IGNORE_EXPR(val1)
 
 #else
 

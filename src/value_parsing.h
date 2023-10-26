@@ -14,7 +14,7 @@ static inline uint8_t ParseDecimalDigit(char c) { return (uint8_t)(c - '0'); }
     uint8_t digit = ParseDecimalDigit(*s++);                                   \
     result = (C_TYPE)(result * 10U);                                           \
     length--;                                                                  \
-    if (ARROW_PREDICT_FALSE(digit > 9U)) {                                     \
+    if (DEC128_PREDICT_FALSE(digit > 9U)) {                                    \
       /* Non-digit */                                                          \
       return false;                                                            \
     }                                                                          \
@@ -25,22 +25,22 @@ static inline uint8_t ParseDecimalDigit(char c) { return (uint8_t)(c - '0'); }
 
 #define PARSE_UNSIGNED_ITERATION_LAST(C_TYPE, MAX_VALUE)                       \
   if (length > 0) {                                                            \
-    if (ARROW_PREDICT_FALSE(result > MAX_VALUE / 10U)) {                       \
+    if (DEC128_PREDICT_FALSE(result > MAX_VALUE / 10U)) {                      \
       /* Overflow */                                                           \
       return false;                                                            \
     }                                                                          \
     uint8_t digit = ParseDecimalDigit(*s++);                                   \
     result = (C_TYPE)(result * 10U);                                           \
     C_TYPE new_result = (C_TYPE)(result + digit);                              \
-    if (ARROW_PREDICT_FALSE(--length > 0)) {                                   \
+    if (DEC128_PREDICT_FALSE(--length > 0)) {                                  \
       /* Too many digits */                                                    \
       return false;                                                            \
     }                                                                          \
-    if (ARROW_PREDICT_FALSE(digit > 9U)) {                                     \
+    if (DEC128_PREDICT_FALSE(digit > 9U)) {                                    \
       /* Non-digit */                                                          \
       return false;                                                            \
     }                                                                          \
-    if (ARROW_PREDICT_FALSE(new_result < result)) {                            \
+    if (DEC128_PREDICT_FALSE(new_result < result)) {                           \
       /* Overflow */                                                           \
       return false;                                                            \
     }                                                                          \
@@ -130,7 +130,7 @@ static inline bool ParseUInt64(const char *s, size_t length, uint64_t *out) {
 #define PARSEHEX(T)                                                            \
   {                                                                            \
     /* lets make sure that the length of the string is not too big */          \
-    if (!ARROW_PREDICT_TRUE(sizeof(T) * 2 >= length && length > 0)) {          \
+    if (!DEC128_PREDICT_TRUE(sizeof(T) * 2 >= length && length > 0)) {         \
       return false;                                                            \
     }                                                                          \
     T result = 0;                                                              \
@@ -166,7 +166,7 @@ static inline bool ParseHexUInt64(const char *s, size_t length, uint64_t *out) {
 
 #define StringToUnsignedInt(T, UTYPE)                                          \
   {                                                                            \
-    if (ARROW_PREDICT_FALSE(length == 0)) {                                    \
+    if (DEC128_PREDICT_FALSE(length == 0)) {                                   \
       return false;                                                            \
     }                                                                          \
     /* If it starts with 0x then its hex */                                    \
@@ -174,7 +174,7 @@ static inline bool ParseHexUInt64(const char *s, size_t length, uint64_t *out) {
       length -= 2;                                                             \
       s += 2;                                                                  \
                                                                                \
-      return ARROW_PREDICT_TRUE(ParseHex##UTYPE(s, length, out));              \
+      return DEC128_PREDICT_TRUE(ParseHex##UTYPE(s, length, out));             \
     }                                                                          \
     /* Skip leading zeros */                                                   \
     while (length > 0 && *s == '0') {                                          \
@@ -208,7 +208,7 @@ static bool StringToUInt64(const char *s, size_t length, uint64_t *out) {
     bool negative = false;                                                     \
     UT unsigned_value = 0;                                                     \
                                                                                \
-    if (ARROW_PREDICT_FALSE(length == 0)) {                                    \
+    if (DEC128_PREDICT_FALSE(length == 0)) {                                   \
       return false;                                                            \
     }                                                                          \
     /* If it starts with 0x then its hex */                                    \
@@ -216,7 +216,7 @@ static bool StringToUInt64(const char *s, size_t length, uint64_t *out) {
       length -= 2;                                                             \
       s += 2;                                                                  \
                                                                                \
-      if (!ARROW_PREDICT_TRUE(ParseHex##UTYPE(s, length, &unsigned_value))) {  \
+      if (!DEC128_PREDICT_TRUE(ParseHex##UTYPE(s, length, &unsigned_value))) { \
         return false;                                                          \
       }                                                                        \
       *out = (T)(unsigned_value);                                              \
@@ -235,11 +235,11 @@ static bool StringToUInt64(const char *s, size_t length, uint64_t *out) {
       length--;                                                                \
       s++;                                                                     \
     }                                                                          \
-    if (!ARROW_PREDICT_TRUE(Parse##UTYPE(s, length, &unsigned_value))) {       \
+    if (!DEC128_PREDICT_TRUE(Parse##UTYPE(s, length, &unsigned_value))) {      \
       return false;                                                            \
     }                                                                          \
     if (negative) {                                                            \
-      if (ARROW_PREDICT_FALSE(unsigned_value > max_negative)) {                \
+      if (DEC128_PREDICT_FALSE(unsigned_value > max_negative)) {               \
         return false;                                                          \
       }                                                                        \
       /* To avoid both compiler warnings (with unsigned negation)              \
@@ -248,7 +248,7 @@ static bool StringToUInt64(const char *s, size_t length, uint64_t *out) {
        */                                                                      \
       *out = (T)(~unsigned_value + 1);                                         \
     } else {                                                                   \
-      if (ARROW_PREDICT_FALSE(unsigned_value > max_positive)) {                \
+      if (DEC128_PREDICT_FALSE(unsigned_value > max_positive)) {               \
         return false;                                                          \
       }                                                                        \
       *out = (T)(unsigned_value);                                              \

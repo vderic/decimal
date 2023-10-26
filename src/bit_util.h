@@ -9,11 +9,11 @@
 
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanForward)
-#define ARROW_POPCOUNT64 __popcnt64
-#define ARROW_POPCOUNT32 __popcnt
+#define DEC128_POPCOUNT64 __popcnt64
+#define DEC128_POPCOUNT32 __popcnt
 #else
-#define ARROW_POPCOUNT64 __builtin_popcountll
-#define ARROW_POPCOUNT32 __builtin_popcount
+#define DEC128_POPCOUNT64 __builtin_popcountll
+#define DEC128_POPCOUNT32 __builtin_popcount
 #endif
 
 // Returns a mask for the bit_index lower order bits.
