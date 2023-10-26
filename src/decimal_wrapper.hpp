@@ -105,10 +105,6 @@ struct Decimal128 {
     return {dec128_divide_exact(d1.dec, d2.dec, precision, scale)};
   }
 
-  void print(int precision, int scale) {
-    dec128_print(stdout, dec, precision, scale);
-  }
-
   Decimal128 &Abs() {
     dec = dec128_abs(dec);
     return *this;
@@ -141,12 +137,6 @@ struct Decimal128 {
     return dec128_round(left.dec, scale, ret_scale);
   }
 };
-
-inline decimal_status_t dec128_from_string(const std::string &value,
-                                           decimal128_t *out, int *precision,
-                                           int *scale) {
-  return dec128_from_string(value.c_str(), out, precision, scale);
-}
 
 inline bool operator==(const Decimal128 &left, const Decimal128 &right) {
   return dec128_cmpeq(left.dec, right.dec);
