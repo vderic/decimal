@@ -171,9 +171,9 @@ decimal_status_t dec128_get_whole_and_fraction(decimal128_t v, int32_t scale,
                                                decimal128_t *whole,
                                                decimal128_t *fraction);
 
-decimal128_t dec128_get_scale_multipler(int32_t scale);
+decimal128_t dec128_get_scale_multiplier(int32_t scale);
 
-decimal128_t dec128_get_half_scale_multipler(int32_t scale);
+decimal128_t dec128_get_half_scale_multiplier(int32_t scale);
 
 decimal128_t dec128_max_value();
 

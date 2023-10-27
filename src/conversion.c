@@ -537,8 +537,8 @@ static decimal_status_t DecimalFromString(const char *s, decimal128_t *out,
       return DEC128_STATUS_ERROR;
     }
     if (out != NULL) {
-      decimal128_t multipler = dec128_get_scale_multipler(-parsed_scale);
-      *out = dec128_multiply(*out, multipler);
+      decimal128_t multiplier = dec128_get_scale_multiplier(-parsed_scale);
+      *out = dec128_multiply(*out, multiplier);
     }
     parsed_precision -= parsed_scale;
     parsed_scale = 0;

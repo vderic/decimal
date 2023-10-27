@@ -181,8 +181,8 @@ decimal128_t dec128_bitwise_shift_right(decimal128_t v, uint32_t bits) {
   return res;
 }
 
-/* get scale multipler */
-decimal128_t dec128_get_scale_multipler(int32_t scale) {
+/* get scale multiplier */
+decimal128_t dec128_get_scale_multiplier(int32_t scale) {
   DCHECK_GE(scale, 0);
   DCHECK_LE(scale, 38);
 
@@ -190,7 +190,7 @@ decimal128_t dec128_get_scale_multipler(int32_t scale) {
 }
 
 /* get half scale mutlipler */
-decimal128_t dec128_get_half_scale_multipler(int32_t scale) {
+decimal128_t dec128_get_half_scale_multiplier(int32_t scale) {
   DCHECK_GE(scale, 0);
   DCHECK_LE(scale, 38);
 
@@ -553,7 +553,7 @@ decimal_status_t dec128_rescale(decimal128_t v, int32_t original_scale,
   const int32_t delta_scale = new_scale - original_scale;
   const int32_t abs_delta_scale = abs(delta_scale);
 
-  decimal128_t multiplier = dec128_get_scale_multipler(abs_delta_scale);
+  decimal128_t multiplier = dec128_get_scale_multiplier(abs_delta_scale);
 
   const bool rescale_data_loss =
       rescale_would_cause_data_loss(v, delta_scale, multiplier, out);
