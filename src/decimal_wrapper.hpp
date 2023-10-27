@@ -16,6 +16,12 @@ struct Decimal128 {
 
   Decimal128(const uint8_t *bytes) { dec = dec128_from_pointer(bytes); }
 
+  std::string ToIntegerString() {
+    char ret[DEC128_MAX_STRLEN];
+    dec128_to_integer_string(dec, ret);
+    return std::string(ret);
+  }
+
   std::string ToString(int32_t scale) {
     char ret[DEC128_MAX_STRLEN];
     dec128_to_string(dec, ret, scale);

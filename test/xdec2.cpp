@@ -106,5 +106,8 @@ int main() {
   std::cout << "round(" << mod.ToString(s3) << "," << std::to_string(s3 - 2)
             << ")=" << round.ToString(s3) << std::endl;
 
+  // ToIntegerString
+  std::cout << "toIntegerString(): " << round.ToIntegerString() << std::endl;
+
   return 0;
 }
