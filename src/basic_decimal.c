@@ -220,9 +220,9 @@ int32_t dec128_count_leading_binary_zeros(decimal128_t v) {
   DCHECK(dec128_cmpge(v, kDecimal128Zero));
 
   if (dec128_high_bits(v) == 0) {
-    return CountLeadingZeros(dec128_low_bits(v)) + 64;
+    return CountLeadingZerosInt64(dec128_low_bits(v)) + 64;
   } else {
-    return CountLeadingZeros((uint64_t)dec128_high_bits(v));
+    return CountLeadingZerosInt64((uint64_t)dec128_high_bits(v));
   }
 }
 
