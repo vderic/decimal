@@ -109,5 +109,13 @@ int main() {
   // ToIntegerString
   std::cout << "toIntegerString(): " << round.ToIntegerString() << std::endl;
 
+  s = mod.Rescale(s3, s3 + 2, &round);
+  if (s) {
+    printf("Rescale failed");
+  }
+
+  std::cout << "rescale(" << mod.ToString(s3) << "," << std::to_string(s3 + 2)
+            << ")=" << round.ToString(s3 + 2) << std::endl;
+
   return 0;
 }

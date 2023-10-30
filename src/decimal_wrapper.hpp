@@ -90,6 +90,11 @@ struct Decimal128 {
 
   uint64_t low_bits() { return dec128_low_bits(dec); }
 
+  decimal_status_t Rescale(int32_t original_scale, int32_t new_scale,
+                           Decimal128 *out) {
+    return dec128_rescale(dec, original_scale, new_scale, &out->dec);
+  }
+
   Decimal128 IncreaseScaleBy(int32_t increase_by) {
     return Decimal128(dec128_increase_scale_by(dec, increase_by));
   }

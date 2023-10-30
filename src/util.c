@@ -102,7 +102,8 @@ decimal128_t dec128_divide_exact(decimal128_t A, int32_t Ascale, decimal128_t B,
     CHECKX(status == DEC128_STATUS_SUCCESS, "division failed");
 
     decimal128_t q = dec128_multiply(
-        result, dec128_get_scale_multiplier((res_ndigits - i - 1) * DEC_DIGITS));
+        result,
+        dec128_get_scale_multiplier((res_ndigits - i - 1) * DEC_DIGITS));
     ret = dec128_sum(ret, q);
   }
 

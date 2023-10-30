@@ -48,11 +48,12 @@ static inline int CountLeadingZeros(uint32_t value) {
 /// \brief Count the number of leading zeros in an unsigned integer.
 static inline int CountLeadingZerosInt64(uint64_t value) {
 #if defined(__clang__) || defined(__GNUC__)
-  if (value == 0) return 64;
+  if (value == 0)
+    return 64;
   return (int)(__builtin_clzll(value));
 #elif defined(_MSC_VER)
-  unsigned long index;                     // NOLINT
-  if (_BitScanReverse64(&index, value)) {  // NOLINT
+  unsigned long index;                    // NOLINT
+  if (_BitScanReverse64(&index, value)) { // NOLINT
     return 63 - (int)(index);
   } else {
     return 64;
