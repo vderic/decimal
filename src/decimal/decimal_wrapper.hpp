@@ -1,21 +1,29 @@
 #pragma once
 
 #include "basic_decimal.h"
-#include <iostream>
 #include <stdexcept>
 
+/// Represents a signed 128-bit integer in two's complement.
+///
+/// This class is also compiled into LLVM IR - so, it should not have cpp
+/// references like streams and boost.
 struct Decimal128 {
   decimal128_t dec;
 
-  Decimal128() { dec = {0}; }
+  /// \brief Empty constructor creates a decimal with a value of 0.
+  Decimal128() noexcept { dec = {0}; }
 
-  Decimal128(decimal128_t _dec) { dec = _dec; }
+  Decimal128(decimal128_t _dec) noexcept { dec = _dec; }
 
-  Decimal128(int64_t v) { dec = dec128_from_int64(v); }
+  Decimal128(int64_t v) noexcept { dec = dec128_from_int64(v); }
 
-  Decimal128(int64_t hi, uint64_t lo) { dec = dec128_from_hilo(hi, lo); }
+  /// \brief Create a Decimal128 from the two's complement representation.
+  Decimal128(int64_t hi, uint64_t lo) noexcept { dec = dec128_from_hilo(hi, lo); }
 
-  Decimal128(const uint8_t *bytes) { dec = dec128_from_pointer(bytes); }
+  /// \brief Create a decimal from an array of bytes.
+  ///
+  /// Bytes are assumed to be in native-endian byte order.
+  explicit Decimal128(const uint8_t *bytes) { dec = dec128_from_pointer(bytes); }
 
   /// \brief Create a decimal from any integer not wider than 64 bits.
   template <typename T,
@@ -67,16 +75,20 @@ struct Decimal128 {
 
   explicit operator int64_t() const { return dec128_to_int64(dec); }
 
+  /// \brief Add a number to this one. The result is truncated to 128 bits.
   Decimal128 &operator+=(const Decimal128 &right) {
     dec = dec128_sum(dec, right.dec);
     return *this;
   }
 
+  /// \brief Add a number to this one. The result is truncated to 128 bits.
   Decimal128 &operator-=(const Decimal128 &right) {
     dec = dec128_subtract(dec, right.dec);
     return *this;
   }
 
+  /// \brief Multiply this number by another number. The result is truncated to
+  /// 128 bits.
   Decimal128 &operator*=(const Decimal128 &right) {
     dec = dec128_multiply(dec, right.dec);
     return *this;
@@ -104,37 +116,57 @@ struct Decimal128 {
     return *this;
   }
 
+  /// \brief Get the high bits of the two's complement representation of the
+  /// number.
   int64_t high_bits() const { return dec128_high_bits(dec); }
 
+  /// \brief Get the low bits of the two's complement representation of the
+  /// number.
   uint64_t low_bits() const { return dec128_low_bits(dec); }
 
+  /// \brief Convert BasicDecimal128 from one scale to another
   decimal_status_t Rescale(int32_t original_scale, int32_t new_scale,
-                           Decimal128 *out) {
+                           Decimal128 *out) const {
     return dec128_rescale(dec, original_scale, new_scale, &out->dec);
   }
 
+  /// \brief Scale up.
   Decimal128 IncreaseScaleBy(int32_t increase_by) const {
     return Decimal128(dec128_increase_scale_by(dec, increase_by));
   }
 
+  /// \brief Scale down.
+  /// - If 'round' is true, the right-most digits are dropped and the result
+  /// value is
+  ///   rounded up (+1 for +ve, -1 for -ve) based on the value of the dropped
+  ///   digits
+  ///   (>= 10^reduce_by / 2).
+  /// - If 'round' is false, the right-most digits are simply dropped.
   Decimal128 ReduceScaleBy(int32_t reduce_by, bool round = true) const {
     return Decimal128(dec128_reduce_scale_by(dec, reduce_by, round));
   }
 
+  /// Divide this number by right and return the decimal result with scale,
+  /// i.e. 12345.6789 / 34.56 = 357.2245052
+  /// result precision and scale MUST be calculated by
+  /// dec128_DIV_precision_scale
   static Decimal128 Divide(Decimal128 &left, int s1, Decimal128 &right, int s2,
                            int precision, int scale) {
     return {dec128_divide_exact(left.dec, s1, right.dec, s2, precision, scale)};
   }
 
+  /// \brief Absolute value (in-place)
   Decimal128 &Abs() {
     dec = dec128_abs(dec);
     return *this;
   }
 
+  /// \brief Absolute value
   static Decimal128 Abs(const Decimal128 &left) {
     return {dec128_abs(left.dec)};
   }
 
+  /// \brief Negate the current value (in-place)
   Decimal128 &Negate() {
     dec = dec128_negate(dec);
     return *this;
