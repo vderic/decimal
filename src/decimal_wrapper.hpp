@@ -1,6 +1,7 @@
 #pragma once
 
 #include "basic_decimal.h"
+#include <iostream>
 #include <stdexcept>
 
 struct Decimal128 {
@@ -16,14 +17,26 @@ struct Decimal128 {
 
   Decimal128(const uint8_t *bytes) { dec = dec128_from_pointer(bytes); }
 
-  std::string ToIntegerString() {
+  /// \brief Create a decimal from any integer not wider than 64 bits.
+  template <typename T,
+            typename = typename std::enable_if<
+                std::is_integral<T>::value && (sizeof(T) <= sizeof(uint64_t)),
+                T>::type>
+  constexpr Decimal128(T value) noexcept // NOLINT(runtime/explicit)
+  {
+    dec = dec128_from_int64(value);
+  }
+
+  std::string ToIntegerString() const {
     char ret[DEC128_MAX_STRLEN];
+    *ret = 0;
     dec128_to_integer_string(dec, ret);
     return std::string(ret);
   }
 
-  std::string ToString(int32_t scale) {
+  std::string ToString(int32_t scale) const {
     char ret[DEC128_MAX_STRLEN];
+    *ret = 0;
     dec128_to_string(dec, ret, scale);
     return std::string(ret);
   }
@@ -35,6 +48,11 @@ struct Decimal128 {
   static decimal_status_t FromString(const char *s, Decimal128 *out,
                                      int32_t *precision, int32_t *scale) {
     return dec128_from_string(s, &out->dec, precision, scale);
+  }
+
+  static decimal_status_t FromString(const std::string &s, Decimal128 *out,
+                                     int32_t *precision, int32_t *scale) {
+    return dec128_from_string(s.c_str(), &out->dec, precision, scale);
   }
 
   static decimal_status_t FromReal(double real, Decimal128 *out,
@@ -86,20 +104,20 @@ struct Decimal128 {
     return *this;
   }
 
-  int64_t high_bits() { return dec128_high_bits(dec); }
+  int64_t high_bits() const { return dec128_high_bits(dec); }
 
-  uint64_t low_bits() { return dec128_low_bits(dec); }
+  uint64_t low_bits() const { return dec128_low_bits(dec); }
 
   decimal_status_t Rescale(int32_t original_scale, int32_t new_scale,
                            Decimal128 *out) {
     return dec128_rescale(dec, original_scale, new_scale, &out->dec);
   }
 
-  Decimal128 IncreaseScaleBy(int32_t increase_by) {
+  Decimal128 IncreaseScaleBy(int32_t increase_by) const {
     return Decimal128(dec128_increase_scale_by(dec, increase_by));
   }
 
-  Decimal128 ReduceScaleBy(int32_t reduce_by, bool round = true) {
+  Decimal128 ReduceScaleBy(int32_t reduce_by, bool round = true) const {
     return Decimal128(dec128_reduce_scale_by(dec, reduce_by, round));
   }
 

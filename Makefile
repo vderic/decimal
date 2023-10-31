@@ -17,7 +17,7 @@ $(BUILDDIRS):
 
 install: all
 	install -d ${prefix} ${prefix}/bin ${prefix}/include ${prefix}/lib
-	install -m 0644 -t ${prefix}/include src/basic_decimal.h src/decimal_wrapper.hpp
+	install -m 0644 -t ${prefix}/include src/basic_decimal.h src/decimal_wrapper.hpp src/endian.h
 	install -m 0644 -t ${prefix}/lib src/libdec128.a
 
 format: $(FORMATDIRS)

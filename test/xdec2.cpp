@@ -117,5 +117,10 @@ int main() {
   std::cout << "rescale(" << mod.ToString(s3) << "," << std::to_string(s3 + 2)
             << ")=" << round.ToString(s3 + 2) << std::endl;
 
+  Decimal128 zero(100);
+
+  std::cout << "zero: " << zero.ToString(0) << std::endl;
+
+
   return 0;
 }

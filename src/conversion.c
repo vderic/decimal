@@ -663,6 +663,7 @@ static void AppendLittleEndianArrayToString(const uint64_t array[], size_t n,
 static void AdjustIntegerStringWithScale(char *str, int32_t scale,
                                          char *result) {
   if (scale == 0) {
+    strcpy(result, str);
     return;
   }
   DCHECK(str != NULL);
