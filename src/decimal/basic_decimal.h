@@ -1,7 +1,7 @@
 #ifndef _DECIMAL_H_
 #define _DECIMAL_H_
 
-#include "endian.h"
+#include "decimal/endian.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

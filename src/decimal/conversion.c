@@ -1,9 +1,9 @@
-#include "basic_decimal.h"
-#include "bit_util.h"
-#include "decimal_internal.h"
-#include "logging.h"
-#include "macros.h"
-#include "value_parsing.h"
+#include "decimal/basic_decimal.h"
+#include "decimal/bit_util.h"
+#include "decimal/decimal_internal.h"
+#include "decimal/logging.h"
+#include "decimal/macros.h"
+#include "decimal/value_parsing.h"
 #include <assert.h>
 #include <math.h>
 

@@ -2,7 +2,7 @@
 
 prefix ?= /usr/local
 #DIRS = src tests
-DIRS = src test
+DIRS = src/decimal test
 
 BUILDDIRS = $(DIRS:%=build-%)
 CLEANDIRS = $(DIRS:%=clean-%)
@@ -16,9 +16,9 @@ $(BUILDDIRS):
 	$(MAKE) -C $(@:build-%=%)
 
 install: all
-	install -d ${prefix} ${prefix}/bin ${prefix}/include ${prefix}/lib
-	install -m 0644 -t ${prefix}/include src/basic_decimal.h src/decimal_wrapper.hpp src/endian.h
-	install -m 0644 -t ${prefix}/lib src/libdec128.a
+	install -d ${prefix} ${prefix}/bin ${prefix}/include/decimal ${prefix}/lib
+	install -m 0644 -t ${prefix}/include/decimal src/decimal/basic_decimal.h src/decimal/decimal_wrapper.hpp src/decimal/endian.h
+	install -m 0644 -t ${prefix}/lib src/decimal/libdec128.a
 
 format: $(FORMATDIRS)
 

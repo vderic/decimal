@@ -1,8 +1,8 @@
-#include "basic_decimal.h"
-#include "bit_util.h"
-#include "decimal_internal.h"
-#include "int_util_overflow.h"
-#include "logging.h"
+#include "decimal/basic_decimal.h"
+#include "decimal/bit_util.h"
+#include "decimal/decimal_internal.h"
+#include "decimal/int_util_overflow.h"
+#include "decimal/logging.h"
 #include <assert.h>
 #include <limits.h>
 #include <math.h>

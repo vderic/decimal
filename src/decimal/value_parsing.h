@@ -1,7 +1,7 @@
 #ifndef VALUE_PARSING_H_
 #define VALUE_PARSING_H_
 
-#include "macros.h"
+#include "decimal/macros.h"
 #include <limits.h>
 #include <stdint.h>
 

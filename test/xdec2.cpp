@@ -1,4 +1,4 @@
-#include "decimal_wrapper.hpp"
+#include "decimal/decimal_wrapper.hpp"
 #include <iostream>
 
 int main() {
@@ -120,7 +120,6 @@ int main() {
   Decimal128 zero(100);
 
   std::cout << "zero: " << zero.ToString(0) << std::endl;
-
 
   return 0;
 }

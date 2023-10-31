@@ -1,6 +1,6 @@
 CC ?= gcc
 CXX ?= g++
-CFLAGS += -Wmissing-declarations -Wall -Wextra -mavx2 -mfma -mbmi2 -MMD -I../src
+CFLAGS += -Wmissing-declarations -Wall -Wextra -mavx2 -mfma -mbmi2 -MMD -I../src/
 
 ifdef DEBUG
     CFLAGS += -O0 -g
@@ -23,10 +23,10 @@ EXECS = xdec xdec2
 
 all: $(EXECS) 
 
-xdec: xdec.c ../src/libdec128.a
+xdec: xdec.c ../src/decimal/libdec128.a
 	$(CC) $(CFLAGS) -o $@ $(filter-out %.hpp %.h, $^) $(LDFLAGS) $(LDLIBS)
 
-xdec2: xdec2.cpp ../src/libdec128.a
+xdec2: xdec2.cpp ../src/decimal/libdec128.a
 	$(CXX) $(CXXFLAGS) -o $@ $(filter-out %.hpp %.h, $^) $(LDFLAGS) $(LDLIBS)
 
 libdec128.a: $(OBJS)

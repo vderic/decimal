@@ -1,7 +1,7 @@
 #ifndef DECIMAL_INTERNAL_H_
 #define DECIMAL_INTERNAL_H_
 
-#include "basic_decimal.h"
+#include "decimal/basic_decimal.h"
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>

@@ -1,6 +1,6 @@
 CC ?= gcc
 CXX ?= g++
-CFLAGS += -Wmissing-declarations -Wall -Wextra -mavx2 -mfma -mbmi2 -MMD -fPIC
+CFLAGS += -Wmissing-declarations -Wall -Wextra -mavx2 -mfma -mbmi2 -MMD -fPIC -I..
 
 ifdef DEBUG
     CFLAGS += -O0 -g
