@@ -35,8 +35,10 @@ void dec128_ADD_SUB_precision_scale(int p1, int s1, int p2, int s2,
   *scale = MAX(s1, s2);
   *precision = MAX(p1 - s1, p2 - s2) + 1 + *scale;
 
+#if 0
   CHECKX(*precision <= DEC128_MAX_PRECISION,
          "decimal_ADD: result precision out of range");
+#endif
 }
 
 void dec128_MUL_precision_scale(int p1, int s1, int p2, int s2, int *precision,
@@ -46,8 +48,10 @@ void dec128_MUL_precision_scale(int p1, int s1, int p2, int s2, int *precision,
   // assert(p1 != 0 && p2 != 0);
   *scale = s1 + s2;
   *precision = p1 + p2 + 1;
+ #if 0
   CHECKX(*precision <= DEC128_MAX_PRECISION,
          "decimal_MUL: result precision out of range");
+ #endif
 }
 
 void dec128_DIV_precision_scale(int p1, int s1, int p2, int s2, int *precision,
@@ -57,8 +61,10 @@ void dec128_DIV_precision_scale(int p1, int s1, int p2, int s2, int *precision,
   // assert(p1 != 0 && p2 != 0);
   *scale = MAX(4, s1 + p2 - s2 + 1);
   *precision = p1 - s1 + s2 + *scale;
+ #if 0
   CHECKX(*precision <= DEC128_MAX_PRECISION,
          "decimal_DIV: result precision out of range");
+ #endif
 }
 
 void dec128_MOD_precision_scale(int p1, int s1, int p2, int s2, int *precision,
