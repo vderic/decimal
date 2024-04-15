@@ -1,6 +1,14 @@
+ARCH=$(shell uname -m)
 CC ?= gcc
 CXX ?= g++
-CFLAGS += -Wmissing-declarations -Wall -Wextra -mavx2 -mfma -mbmi2 -MMD -fPIC -I..
+CFLAGS = -Wmissing-declarations -Wall -Wextra -MMD -fPIC -I..
+
+ifeq ($(ARCH), x86_64)
+CFLAGS += -mavx2 -mfma -mbmi2
+else ifeq ($(ARCH), aarch64)
+CFLAGS += -D__ARM_NEOM__
+endif
+
 
 ifdef DEBUG
     CFLAGS += -O0 -g
