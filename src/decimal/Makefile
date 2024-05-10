@@ -4,9 +4,12 @@ CXX ?= g++
 CFLAGS = -Wmissing-declarations -Wall -Wextra -MMD -fPIC -I..
 
 ifeq ($(ARCH), x86_64)
-CFLAGS += -mavx2 -mfma -mbmi2
+	MARCH ?= broadwell
+	CFLAGS += -march=$(MARCH)
 else ifeq ($(ARCH), aarch64)
-CFLAGS += -D__ARM_NEOM__
+	CFLAGS += -D__ARM_NEOM__
+else
+	$(error unsupported arch $(ARCH))
 endif
 
 
